@@ -1,46 +1,50 @@
->📋  A template README.md for code accompanying a Machine Learning paper
 
-# My Paper Title
+# Fairness Guarantees under Demographic Shift
 
-This repository is the official implementation of [My Paper Title](https://arxiv.org/abs/2030.12345). 
+This repository is the official implementation of [Fairness Guarantees under Demographic Shift](https://openreview.net/pdf?id=wbPObLm6ueA). 
 
 >📋  Optional: include a graphic explaining your approach/main result, bibtex entry, link to demos, blog posts and tutorials
 
 ## Requirements
 
-To install requirements:
+Requires Python 3.x, Numpy 1.16+, and Cython 0.29+
+
+To install further required packages and modules:
 
 ```setup
 pip install -r requirements.txt
 ```
 
->📋  Describe how to set up the environment, e.g. pip/conda/docker commands, download datasets, etc...
+Datasets are provided in the repository
 
-## Training
+## Training and Evaluation
 
-To train the model(s) in the paper, run this command:
+The experiments from the paper can be executed by running the provided batch file from the Python directory, as follows:
 
-```train
-python train.py --input-data <path_to_data> --alpha 10 --beta 20
+```setup
+./experiments/scripts/iclr_ds_experiments.bat
 ```
+     
+Once the experiments complete, the figures found in the paper can be generated using the following two commands, 
 
->📋  Describe how to train the models, with example commands on how to train the models in your paper, including the full training procedure and appropriate hyperparameters.
-
-## Evaluation
-
-To evaluate my model on ImageNet, run:
-
-```eval
-python eval.py --model-file mymodel.pth --benchmark imagenet
+```setup
+    python -m experiments.scripts.iclr_figures_adult
+    python -m experiments.scripts.iclr_figures_adult --unknown_ds
+    python -m experiments.scripts.iclr_figures_brazil
+    python -m experiments.scripts.iclr_figures_brazil --unknown_ds
 ```
+    
+Once completed, the new figures will be saved to `Python/figures/*` by default.
 
->📋  Describe how to evaluate the trained models on benchmarks reported in the paper, give commands that produce the results (section below).
 
-## Pre-trained Models
+## Pre-trained Models (Maybe change to Results?)
 
 You can download pretrained models here:
 
-- [My awesome model](https://drive.google.com/mymodel.pth) trained on ImageNet using parameters x,y,z. 
+- [Adult Census dataset - Known shift](https://drive.google.com/mymodel.pth) trained on ... using parameters ... 
+- [Adult Census dataset - Unknown shift](https://drive.google.com/mymodel.pth) trained on ...
+- [Brazilian Student Grades dataset - Known shift](https://drive.google.com/mymodel.pth) trained ...
+- [Brazilian Student Grades dataset - Unknown shift](https://drive.google.com/mymodel.pth) trained ...
 
 >📋  Give a link to where/how the pretrained models can be downloaded and how they were trained (if applicable).  Alternatively you can have an additional column in your results table with a link to the models.
 
@@ -59,4 +63,4 @@ Our model achieves the following performance on :
 
 ## Contributing
 
->📋  Pick a licence and describe how to contribute to your code repository. 
+> SeldonianML is released under the MIT license.
