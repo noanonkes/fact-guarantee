@@ -10,3 +10,7 @@ scipy
 scikit-learn
 h5py
 tables
+torch
+torchvision
+cvxopt
+parglare

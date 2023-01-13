@@ -8,7 +8,7 @@ import datasets
 import os
 import errno
 import signal
-from collections import Sequence
+from collections.abc import Sequence
 from itertools import product
 import progressbar
 

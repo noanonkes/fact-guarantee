@@ -397,10 +397,10 @@ if __name__ == '__main__':
 		args_to_expand = parser._sweep_argnames + ['loss', 'kernel', 'cov', 'fl_e', 'n_train']
 		tparams, mparams = launcher.make_parameters(tparams, mparams, expand=args_to_expand)	
 
-		# print()
-		# # Create a results file and directory
-		# save_path = launcher.prepare_paths(args.base_path, tparams, mparams, smla_names, root='results', filename=None)
-		# print()
-		# # Run the experiment
-		# launcher.run(args.n_trials, save_path, model_evaluators, load_dataset, tparams, mparams, n_workers=args.n_jobs, seed=None)
+		print()
+		# Create a results file and directory
+		save_path = launcher.prepare_paths(args.base_path, tparams, mparams, smla_names, root='results', filename=None)
+		print()
+		# Run the experiment
+		launcher.run(args.n_trials, save_path, model_evaluators, load_dataset, tparams, mparams, n_workers=args.n_jobs, seed=None)
 
