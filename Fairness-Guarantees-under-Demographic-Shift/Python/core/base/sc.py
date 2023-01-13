@@ -1,3 +1,4 @@
+from utils import TimerCollection
 import numpy as np
 from functools import partial
 
@@ -7,9 +8,6 @@ from utils.rvs import ConstraintManager
 from sys import float_info
 
 MAX_VALUE = float_info.max
-
-from utils import TimerCollection
-
 
 # Set-up for the classifier
 class SeldonianClassifierBase:
@@ -43,7 +41,7 @@ class SeldonianClassifierBase:
         self._cs_scale = cs_scale
         self._seed = seed
 
-		# TODO: figure out what constraint manager contains try to understand it
+        # TODO: figure out what constraint manager contains try to understand it
         # Set up the constraint manager to handle the input constraints
         self._cm = ConstraintManager(
             constraint_strs,
@@ -101,7 +99,7 @@ class SeldonianClassifierBase:
             known_demographic_terms=self._cm._known_demographic_terms,
         )
 
-	# Split the data in Data_candidate and Data_fairness (I think?)
+    # Split the data in Data_candidate and Data_fairness (I think?)
     def set_cm_data(self, predictf, split):
         try:
             Yp = predictf(split["X"])
@@ -130,14 +128,14 @@ class SeldonianClassifierBase:
                 dataset.X, buffer_angle=5.0, has_intercept=False, use_chull=True
             )
 
-		######
-		# This optimizer seems to be the only one that is actually used in the experiments
-		# Covariance Matrix Adaptation Evolution Strategy -> stochastic & derivative free (based on evolution concepts ~woa)
+        ######
+        # This optimizer seems to be the only one that is actually used in the experiments
+        # Covariance Matrix Adaptation Evolution Strategy -> stochastic & derivative free (based on evolution concepts ~woa)
         elif name == "cmaes":
             return OPTIMIZERS[name](
                 self.n_features, sigma0=0.01, n_restarts=50, seed=self._seed
             )
-		######
+        ######
 
         elif name == "bfgs":
             return OPTIMIZERS[name](
@@ -150,8 +148,8 @@ class SeldonianClassifierBase:
             "SeldonianClassifierBase.get_optimizer(): Unknown optimizer '%s'." % name
         )
 
-
     # Base models - the actual classifiers which input data X and theta
+
     def get_predictf(self, theta=None):
         return partial(self.predict, theta=theta)
 
@@ -159,14 +157,14 @@ class SeldonianClassifierBase:
 
         theta = self.theta if (theta is None) else theta
 
-		######
-		# This model_type seems to be the only one that is actually used in the experiments
-		# Linear -> returns -1 when <0, 0 if ==0, and 1 when >0
+        ######
+        # This model_type seems to be the only one that is actually used in the experiments
+        # Linear -> returns -1 when <0, 0 if ==0, and 1 when >0
         if self.model_type == "linear":
             return np.sign(X.dot(theta))
-		######
+        ######
 
-		# Radial Basis Function Kernel -> uses support vectors
+        # (unused) Radial Basis Function Kernel -> uses support vectors
         elif self.model_type == "rbf":
             s, b, *c = theta
             X_ref = self.model_variables["X"]
@@ -175,10 +173,10 @@ class SeldonianClassifierBase:
             K = np.exp(-0.5 * P / (s**2))
             return np.sign(np.einsum("n,n,nm->m", c, Y_ref, K) + b)
 
-		# Multi-Layer Perceptron -> implemented with Numpy
+        # (unused) Multi-Layer Perceptron -> implemented with Numpy
         elif self.model_type == "mlp":
             A = X
-			# 'hidden_layers' model parameter does not even exist
+            # 'hidden_layers' model parameter does not even exist
             for nh in self.model_params["hidden_layers"]:
                 nw = A.shape[0] * nh
                 w, theta = theta[:nw], theta[nw:]
@@ -197,7 +195,7 @@ class SeldonianClassifierBase:
         if self.model_type == "linear":
             return self.dataset.n_features
 
-		# unused lines from here since only 'linear' is used
+        # unused lines from here since only 'linear' is used
         if self.model_type == "rbf":
             return self.dataset.n_optimization + 2
         if self.model_type == "mlp":
@@ -209,7 +207,7 @@ class SeldonianClassifierBase:
             n += nh + 1
             return n
 
-	# unused function
+    # unused function
     def _store_model_variables(self, dataset):
         if self.model_type == "rbf":
             split = dataset.optimization_splits()
@@ -247,6 +245,7 @@ class SeldonianClassifierBase:
             term_values=self._term_values,
         )
 
+
     # Candidate selection
 
     def candidate_objective(self, theta, split, data_ratio):
@@ -279,7 +278,7 @@ class SeldonianClassifierBase:
         self._tc.toc("eval_c_obj")
         return 1.0
 
-    # Model training - determines if model 
+    # Model training
     def fit(
         self,
         dataset,
@@ -289,10 +288,12 @@ class SeldonianClassifierBase:
         opt_params={},
     ):
         self.dataset = dataset
-        opt = self.get_optimizer(optimizer_name, dataset, opt_params=opt_params)
+        opt = self.get_optimizer(
+            optimizer_name, dataset, opt_params=opt_params)
 
         # Store any variables that will be required by the model
-        self._store_model_variables(dataset) # only in case of rbf so unused...
+        # only in case of rbf so unused...
+        self._store_model_variables(dataset)
 
         # Compute number of samples of g(theta) for the candidate and safety sets
         # Note: This assumes that the number of samples used to estimate g(theta)
@@ -315,9 +316,11 @@ class SeldonianClassifierBase:
         predictf = self.get_predictf()
         self.set_cm_data(predictf, dataset.safety_splits())
         st_thresholds = self.safety_test()
-        accept = False if any(np.isnan(st_thresholds)) else (st_thresholds <= 0.0).all()
+        accept = False if any(np.isnan(st_thresholds)) else (
+            st_thresholds <= 0.0).all()
         return accept
         # return True
+
 
     # Model evaluation
 
@@ -348,7 +351,8 @@ class SeldonianClassifierBase:
                 for cnum in range(self.n_constraints):
                     meta["co_%d_mean" % cnum] = np.nan
             else:
-                meta["loss_%s" % name] = self._error(predictf, split["X"], split["Y"])
+                meta["loss_%s" % name] = self._error(
+                    predictf, split["X"], split["Y"])
                 data = self.load_split(split, Yp=Yp)
                 self._cm.set_data(data)
                 values = self._cm.evaluate()
@@ -361,9 +365,11 @@ class SeldonianClassifierBase:
             stest = self.safety_test()
             self.set_cm_data(predictf, splits["candidate"])
             pred_stest = self.predict_safety_test(ds_ratio)
-            meta["accept"] = False if any(np.isnan(stest)) else (stest <= 0.0).all()
+            meta["accept"] = False if any(
+                np.isnan(stest)) else (stest <= 0.0).all()
             meta["predicted_accept"] = (
-                False if any(np.isnan(pred_stest)) else (pred_stest <= 0.0).all()
+                False if any(np.isnan(pred_stest)) else (
+                    pred_stest <= 0.0).all()
             )
             for i, (st, pst) in enumerate(zip(stest, pred_stest)):
                 meta["co_%d_safety_thresh" % i] = st
@@ -396,9 +402,10 @@ class SeldonianClassifier(SeldonianClassifierBase):
         deltas,					# specified in experiment file
         shape_error=False,		# in model_params
         verbose=False,			# in model_params
-        model_type="linear",	# in model_params - always linear
+        model_type="linear",  # in model_params - always linear
         model_params={},		# kwarg? in experiment file - if robustness=enforced extra params are added
-        ci_mode="hoeffding",	# experiments use both 'hoeffding' (for Quasi-) and 'ttest' (for Regular) 
+        # experiments use both 'ttest' (for Quasi-) and 'Hoeffding' (for Regular)
+        ci_mode="hoeffding",
         robustness_bounds=[],
         term_values={},
         cs_scale=2.0,			# in model_params
@@ -422,12 +429,12 @@ class SeldonianClassifier(SeldonianClassifierBase):
             term_values=term_values,
             cs_scale=cs_scale,
             importance_samplers=importance_samplers,
-            demographic_variable=demographic_variable,					
-            demographic_variable_values=demographic_variable_values,	
-            demographic_marginals=demographic_marginals,				
-            known_demographic_terms=known_demographic_terms,			
+            demographic_variable=demographic_variable,
+            demographic_variable_values=demographic_variable_values,
+            demographic_marginals=demographic_marginals,
+            known_demographic_terms=known_demographic_terms,
             seed=seed,
-            robust_loss=robust_loss,									
+            robust_loss=robust_loss,
         )
 
 # Unused class
