@@ -418,7 +418,8 @@ class ConstraintManager():
 				ln, un = ConstraintManager.bound_expression(_E, bounds)
 				l, u = max(l,ln), max(u,un)
 			return (l,u)
-		if isinstance(E, expressions.MaxExpression):
+		# Adjusted to NANMax
+		if isinstance(E, expressions.NANMaxExpression):
 			l, u = ConstraintManager.bound_expression(E._terms[0], bounds)
 			for _E in E._terms[1:]:
 				ln, un = ConstraintManager.bound_expression(_E, bounds)
