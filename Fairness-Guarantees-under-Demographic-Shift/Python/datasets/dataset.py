@@ -21,7 +21,8 @@ class Dataset(object):
 		self._unique_values = {}
 		for k, v in contents.items():
 			setattr(self, '_%s' % k, v)
-			if v.dtype == int:
+			# Adjusted
+			if v.dtype == np.int32 or v.dtype == int:
 				self._unique_values[k] = np.unique(v)
 
 		# Compute indices for the splits
