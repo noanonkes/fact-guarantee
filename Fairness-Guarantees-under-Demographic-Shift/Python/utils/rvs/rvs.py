@@ -15,7 +15,7 @@ import re
 import warnings
 
 from utils.rvs.discrete_robustness import *
-from utils.rvs.utils import safediv, safeprod, safesum, is_iterable, COMPARATORS, replace_keywords, load_probabilities, strip_is_funcs, optimize_demographic_shift, get_marginal_region_vertices, is_ttest, is_hoeffding, check_bounds_vector, is_estimate,optimize_on_simplex, get_opt_is_estimate_function, get_opt_is_hoeffding_function, get_opt_is_ttest_function
+from utils.rvs.utils import safediv, safeprod, safesum, is_iterable, COMPARATORS, replace_keywords, load_probabilities, strip_is_funcs, get_marginal_region_vertices, is_ttest, is_hoeffding, check_bounds_vector, is_estimate,optimize_on_simplex, get_opt_is_estimate_function, get_opt_is_hoeffding_function, get_opt_is_ttest_function
 from utils.rvs.parser import get_parser
 from utils.rvs import expressions
 from utils import TimerCollection, keyboard
@@ -492,6 +492,7 @@ class ConstraintManager():
 			self._tc.toc(f'bound_constraints:bound_variable:{name}:bound_ds')
 			return val
 		if not(E._is_func is None):
+			print('Importance Sampling')
 			self._tc.tic(f'bound_constraints:bound_variable:{name}:bound_is')
 			val = self._bound_variable_with_importance_sampling(E, S, n, delta, a, b, mode=mode, n_scale=n_scale)
 			self._tc.toc(f'bound_constraints:bound_variable:{name}:bound_is')

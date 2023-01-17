@@ -41,7 +41,6 @@ class SeldonianClassifierBase:
         self._cs_scale = cs_scale
         self._seed = seed
 
-        # TODO: figure out what constraint manager contains try to understand it
         # Set up the constraint manager to handle the input constraints
         self._cm = ConstraintManager(
             constraint_strs,
@@ -120,29 +119,15 @@ class SeldonianClassifierBase:
     # Accessor for different optimizers
     def get_optimizer(self, name, dataset, opt_params={}):
 
-        if name == "linear-shatter":
-            assert (
-                self.model_type == "linear"
-            ), "SeldonianClassifierBase.get_optimizer(): linear-shatter optimizer is only compatible with a linear model."
-            return OPTIMIZERS[name](
-                dataset.X, buffer_angle=5.0, has_intercept=False, use_chull=True
-            )
 
         ######
         # This optimizer seems to be the only one that is actually used in the experiments
         # Covariance Matrix Adaptation Evolution Strategy -> stochastic & derivative free (based on evolution concepts ~woa)
-        elif name == "cmaes":
+        if name == "cmaes":
             return OPTIMIZERS[name](
                 self.n_features, sigma0=0.01, n_restarts=50, seed=self._seed
             )
         ######
-
-        elif name == "bfgs":
-            return OPTIMIZERS[name](
-                self.n_features, sigma0=2.0, n_restarts=50, **opt_params
-            )
-        elif name == "slsqp":
-            return OPTIMIZERS[name](self.n_features)
 
         raise ValueError(
             "SeldonianClassifierBase.get_optimizer(): Unknown optimizer '%s'." % name
@@ -164,27 +149,6 @@ class SeldonianClassifierBase:
             return np.sign(X.dot(theta))
         ######
 
-        # (unused) Radial Basis Function Kernel -> uses support vectors
-        elif self.model_type == "rbf":
-            s, b, *c = theta
-            X_ref = self.model_variables["X"]
-            Y_ref = self.model_variables["Y"]
-            P = np.sum((X_ref[:, None, :] - X[None, :, :]) ** 2, axis=2)
-            K = np.exp(-0.5 * P / (s**2))
-            return np.sign(np.einsum("n,n,nm->m", c, Y_ref, K) + b)
-
-        # (unused) Multi-Layer Perceptron -> implemented with Numpy
-        elif self.model_type == "mlp":
-            A = X
-            # 'hidden_layers' model parameter does not even exist
-            for nh in self.model_params["hidden_layers"]:
-                nw = A.shape[0] * nh
-                w, theta = theta[:nw], theta[nw:]
-                W = w.reshape((A.shape[0], nh))
-                A = np.hstack((A.dot(W), np.ones((W.shape[1], 1))))
-                A = np.tanh(A)
-            return np.sign(A.dot(theta))
-
         raise ValueError(
             "SeldonianClassifierBase.predict(): unknown model type: '%s'"
             % self.model_type
@@ -194,26 +158,6 @@ class SeldonianClassifierBase:
     def n_features(self):
         if self.model_type == "linear":
             return self.dataset.n_features
-
-        # unused lines from here since only 'linear' is used
-        if self.model_type == "rbf":
-            return self.dataset.n_optimization + 2
-        if self.model_type == "mlp":
-            n = 0
-            n0 = self.dataset.n_features - 1
-            for nh in self.model_params["hidden_layers"]:
-                n += (n0 + 1) * nh
-                n0 = nh
-            n += nh + 1
-            return n
-
-    # unused function
-    def _store_model_variables(self, dataset):
-        if self.model_type == "rbf":
-            split = dataset.optimization_splits()
-            self.model_variables["X"] = split["X"]
-            self.model_variables["Y"] = split["Y"]
-
 
     # Constraint evaluation
 
@@ -293,7 +237,7 @@ class SeldonianClassifierBase:
 
         # Store any variables that will be required by the model
         # only in case of rbf so unused...
-        self._store_model_variables(dataset)
+        # self._store_model_variables(dataset)
 
         # Compute number of samples of g(theta) for the candidate and safety sets
         # Note: This assumes that the number of samples used to estimate g(theta)
@@ -436,61 +380,3 @@ class SeldonianClassifier(SeldonianClassifierBase):
             seed=seed,
             robust_loss=robust_loss,
         )
-
-# Unused class
-class SeldonianMCClassifier(SeldonianClassifierBase):
-    def __init__(
-        self,
-        epsilons,
-        deltas,
-        shape_error=False,
-        verbose=False,
-        model_type="linear",
-        n_classes=2,
-        model_params={},
-        loss_weights=None,
-        robustness_bounds={},
-        term_values={},
-    ):
-        self.n_classes = n_classes
-        self.loss_weights = (
-            1 - np.eye(n_classes) if (loss_weights is None) else loss_weights
-        )
-        self.constraint_weights = np.zeros_like(self.loss_weights)
-        self.constraint_weights[0, 1] = 1.0
-        self.epsilons = epsilons
-        self.deltas = deltas
-        super().__init__(
-            shape_error=shape_error,
-            verbose=verbose,
-            model_type=model_type,
-            model_params=model_params,
-            robustness_bounds=robustness_bounds,
-            term_values=term_values,
-        )
-
-    def predict(self, X, theta=None):
-        theta = self.theta if (theta is None) else theta
-        if self.model_type == "linear":
-            theta = theta.reshape((X.shape[1], self.n_classes))
-            return np.argmax(X.dot(theta), axis=1)
-        raise ValueError(
-            "GeneralSeldonianMCClassifier.predict(): unknown model type: '%s'"
-            % self.model_type
-        )
-
-    def _get_confusion_indicators(self, Y, Yp):
-        n = len(Y)
-        C = np.zeros((n, self.n_classes, self.n_classes))
-        C[np.arange(n), Yp, Y] += 1
-        return C
-
-    def _error(self, predictf, X, Y):
-        Yp = predictf(X)
-        C = self._get_confusion_indicators(Y, Yp)
-        return (C.sum(0) * self.loss_weights).sum() / C.shape[0]
-
-    @property
-    def n_features(self):
-        if self.model_type == "linear":
-            return self.dataset.n_features * self.n_classes

@@ -10,8 +10,7 @@ from torchvision import datasets, transforms
 from torch.autograd import Variable
 from numpy import genfromtxt
 from baselines.fair_robust.dataset_loader import MyDataset
-import baselines.fair_robust.create_data as create_data
-from baselines.fair_robust.minimax_optimization import compute_weight_with_fairness_no_label, compute_weight_with_fairness_with_label
+from baselines.fair_robust.minimax_optimization import compute_weight_with_fairness_no_label
 
 
 class logsticRegression(nn.Module):
@@ -180,34 +179,3 @@ class UnlabeledFairRobust():
         running_acc = running_acc.numpy()
         print('Finish Acc %.6f:' % (running_acc / len(Sen_test)))
         print('Finish risk difference %.6f' % (risk_difference))
-
-
-
-if __name__ == '__main__':
-
-    model = UnlabeledFairRobust()
-
-
-    # from datasets.adult import load
-    from datasets.brazil_with_race import load
-
-
-    # D = load()
-    D = load(gpa_cutoff=3.0, standardize=True)
-    D = D.resample(n_candidate=5000, n_safety=5000, n_test=0)
-
-    splits = D.training_splits()
-    splits['Y'] = 1.0*(splits['Y'] == 1)
-    model.fit(splits['X'], splits['Y'], splits['S'])
-
-    # splits = D.testing_splits()
-    # splits['Y'] = 1.0*(splits['Y'] == 1)
-    # model.eval(splits['X'], splits['Y'], splits['S'])
-
-    def predictf(X, model=model):
-        Yp = model.predict(X)
-        return 1*(Yp==1) - 1*(Yp==0)
-
-
-    
-

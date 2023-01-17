@@ -6,17 +6,6 @@ from collections import defaultdict
 import traceback
 from copy import deepcopy
 
-def _indicator_loss(w, X, y):
-    Yp = np.sign(np.dot(X, w))
-    return np.mean(Yp==y)
-    
-
-def _hinge_loss(w, X, y):
-    yz = y * np.dot(X,w) # y * (x.w)
-    yz = np.maximum(np.zeros_like(yz), (1-yz)) # hinge function
-    
-    return sum(yz)
-
 def _logistic_loss(w, X, y, return_arr=None):
 	"""Computes the logistic loss.
 
@@ -42,18 +31,6 @@ def _logistic_loss(w, X, y, return_arr=None):
 		out = -(log_logistic(yz))
 	else:
 		out = -np.sum(log_logistic(yz))
-	return out
-
-def _logistic_loss_l2_reg(w, X, y, lam=None):
-
-	if lam is None:
-		lam = 1.0
-
-	yz = y * np.dot(X,w)
-	# Logistic loss is the negative of the log of the logistic function.
-	logistic_loss = -np.sum(log_logistic(yz))
-	l2_reg = (float(lam)/2.0) * np.sum([elem*elem for elem in w])
-	out = logistic_loss + l2_reg
 	return out
 
 

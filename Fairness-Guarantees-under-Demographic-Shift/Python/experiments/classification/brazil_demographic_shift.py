@@ -13,6 +13,8 @@ from sklearn.exceptions import ConvergenceWarning
 
 from baselines.fairlearn.classred import expgrad
 from baselines.fairlearn import moments
+
+
 import baselines.fair_classification.utils as fc_ut
 import baselines.fair_classification.loss_funcs as fc_lf
 from baselines.fair_robust.unlabeled import UnlabeledFairRobust
@@ -185,30 +187,6 @@ def _get_ttest_sc(dataset, mp, enforce_robustness=False):
 	model = SeldonianClassifier(mp['constraints'], mp['deltas'], **model_params)
 	accept = model.fit(dataset, n_iters=mp['n_iters'], optimizer_name=mp['optimizer'], theta0=w)
 	return model.predict, ~accept
-
-def _get_sgd(dataset, mp):
-	split = dataset.training_splits()
-	Xt, Yt = split['X'], split['Y']
-	if mp['loss']=='log':
-		model = LM.LogisticRegression(fit_intercept=mp['fit_intercept'])
-	else:
-		model = LM.SGDClassifier(loss=mp['loss'], penalty=mp['penalty'], fit_intercept=mp['fit_intercept'], max_iter=1000, alpha=0.000001)
-	model.fit(Xt, Yt)
-	return model.predict, False
-
-def _get_svc(dataset, mp):
-	split = dataset.training_splits()
-	Xt, Yt = split['X'], split['Y']
-	model = SVC(gamma=mp['gamma'], C=mp['C'], kernel=mp['kernel'])
-	model.fit(Xt, Yt)
-	return model.predict, False
-
-def _get_linsvc(dataset, mp):
-	split = dataset.training_splits()
-	Xt, Yt = split['X'], split['Y']
-	model = LinearSVC(loss=mp['loss'], penalty=mp['penalty'], fit_intercept=mp['fit_intercept'])
-	model.fit(Xt, Yt)
-	return model.predict, False
 	
 def _get_fair_robust(dataset, mp):
 	split = dataset.training_splits()
@@ -244,15 +222,6 @@ def eval_ttest_sc(dataset, mp):
 def eval_ttest_sc_robust(dataset, mp):
 	trainf = lambda dataset, mp: _get_ttest_sc(dataset, mp, enforce_robustness=True)
 	return _evaluate_model(dataset, trainf, mp)
-
-def eval_sgd(dataset, mp):
-	return _evaluate_model(dataset, _get_sgd, mp)
-
-def eval_svc(dataset, mp):
-	return _evaluate_model(dataset, _get_svc, mp)
-
-def eval_linsvc(dataset, mp):
-	return _evaluate_model(dataset, _get_linsvc, mp)
 
 def eval_fair_robust(dataset, mp):
 	return _evaluate_model(dataset, _get_fair_robust, mp)

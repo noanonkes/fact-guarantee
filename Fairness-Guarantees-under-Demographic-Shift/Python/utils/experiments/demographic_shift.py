@@ -25,61 +25,6 @@ def evaluate_antagonistic_demographic_shift(predictf, constraints, population, o
     return acc_orig, g_orig, acc_shifted, g_shifted
 
 
-def evaluate_random_demographic_shift(predictf, constraints, population, opts, n_samples=20):
-    assert len(constraints) == 1, ('evaluate_random_demographic_shift(): This function is only designed to evaluate shift under a single constraint. %d Constraints provided.' % len(constraints))
-
-    data = population.all_sets()
-    data['Yp'] = predictf(data['X'])            
-
-    # Compute original accuracy
-    acc_orig = np.mean(data['Yp'] == data['Y'])
-    
-    # Compute original g(theta)
-    cm = ConstraintManager(constraints)
-    cm.set_data(data)
-    g_orig = cm.evaluate()
-    
-    # Compute accuracy and g(theta) after demographic shift
-    g_shifted, acc_shifted = get_antagonistic_results_random(data, population, constraints, opts, n_samples=n_samples)
-    
-    return acc_orig, g_orig, acc_shifted, g_shifted
-
-
-
-def get_resampled_probs(population, demographic_variable, demographic_marginals):
-    # Ranomly sample a valid marginal distribution from the range of valid values
-    m = len(demographic_marginals)
-    while True:
-        p = np.zeros(m)
-        I = np.random.choice(m, m, replace=False).tolist()
-        while len(I) > 1:
-            i = I.pop()
-            pmin, pmax = demographic_marginals[i]
-            p[i] = np.random.random()*(pmax-pmin) + pmin
-        i = I.pop()
-        pmin, pmax = demographic_marginals[i]
-        pi = 1 - sum(p)
-        if (pi >= pmin) and (pi <= pmax):
-            p[i] = pi
-            return p
-
-def get_antagonistic_results_random(data, population, constraints, opts, n_samples=20):
-    new_opts  = deepcopy(opts)
-    worst_g   = -np.inf
-    worst_acc = np.nan 
-    assert len(constraints) == 1, ('get_antagonistic_results_opt(): This function is only designed to evaluate shift under a single constraint. %d Constraints provided.' % len(constraints))
-    for _ in range(n_samples):
-        probs = get_resampled_probs(population, opts['demographic_variable'].name, opts['demographic_marginals'])
-        new_opts['demographic_marginals'] = probs
-        cm = ConstraintManager(constraints+['E[Y=Yp]'], **new_opts)
-        cm.set_data(data)
-        g, acc = cm.evaluate()
-        if g > worst_g:
-            worst_g   = g
-            worst_acc = acc
-    return worst_g, worst_acc
-
-
 def get_antagonistic_results_opt(data, population, constraints, opts):
     assert len(constraints) == 1, ('get_antagonistic_results_opt(): This function is only designed to evaluate shift under a single constraint. %d Constraints provided.' % len(constraints))
     new_opts = deepcopy(opts)

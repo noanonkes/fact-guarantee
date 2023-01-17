@@ -1,2 +1,0 @@
-class SMLA(object):
-	pass

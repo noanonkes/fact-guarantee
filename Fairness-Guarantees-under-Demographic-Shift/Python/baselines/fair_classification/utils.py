@@ -8,12 +8,6 @@ from copy import deepcopy
 import matplotlib.pyplot as plt # for plotting stuff
 import sys
 
-# SEED = 1122334455
-# seed(SEED) # set the random seed so that the random permutations can be reproduced again
-# np.random.seed(SEED)
-
-
-
 
 def train_model(x, y, x_control, loss_function, apply_fairness_constraints, apply_accuracy_constraint, sep_constraint, sensitive_attrs, sensitive_attrs_to_cov_thresh, gamma=None):
 
@@ -127,17 +121,7 @@ def train_model(x, y, x_control, loss_function, apply_fairness_constraints, appl
             constraints = constraints
             )
 
-    # try:
-    #     assert(w.success == True)
-    # except:
-    #     print("Optimization problem did not converge.. Check the solution returned by the optimizer.")
-    #     print("Returned solution is:")
-    #     print(w)
-
-
-
     return w.x
-
 
 def compute_cross_validation_error(x_all, y_all, x_control_all, num_folds, loss_function, apply_fairness_constraints, apply_accuracy_constraint, sep_constraint, sensitive_attrs, sensitive_attrs_to_cov_thresh_arr, gamma=None):
 
@@ -228,52 +212,6 @@ def compute_cross_validation_error(x_all, y_all, x_control_all, num_folds, loss_
 
     
     return test_acc_arr, train_acc_arr, correlation_dict_test_arr, correlation_dict_train_arr, cov_dict_test_arr, cov_dict_train_arr
-
-
-
-def print_classifier_fairness_stats(acc_arr, correlation_dict_arr, cov_dict_arr, s_attr_name):
-    
-    correlation_dict = get_avg_correlation_dict(correlation_dict_arr)
-    non_prot_pos = correlation_dict[s_attr_name][1][1]
-    prot_pos = correlation_dict[s_attr_name][0][1]
-    p_rule = (prot_pos / non_prot_pos) * 100.0
-    
-    print("Accuracy: %0.2f" % (np.mean(acc_arr)))
-    print("Protected/non-protected in +ve class: %0.0f%% / %0.0f%%" % (prot_pos, non_prot_pos))
-    print("P-rule achieved: %0.0f%%" % (p_rule))
-    print("Covariance between sensitive feature and decision from distance boundary : %0.3f" % (np.mean([v[s_attr_name] for v in cov_dict_arr])))
-    print
-    return p_rule
-
-def compute_p_rule(x_control, class_labels):
-
-    """ Compute the p-rule based on Doctrine of disparate impact """
-
-    non_prot_all = sum(x_control == 1.0) # non-protected group
-    prot_all = sum(x_control == 0.0) # protected group
-    non_prot_pos = sum(class_labels[x_control == 1.0] == 1.0) # non_protected in positive class
-    prot_pos = sum(class_labels[x_control == 0.0] == 1.0) # protected in positive class
-    frac_non_prot_pos = float(non_prot_pos) / float(non_prot_all)
-    frac_prot_pos = float(prot_pos) / float(prot_all)
-    p_rule = (frac_prot_pos / frac_non_prot_pos) * 100.0
-    print
-    print("Total data points: %d" % (len(x_control)))
-    print("# non-protected examples: %d" % (non_prot_all))
-    print("# protected examples: %d" % (prot_all))
-    print("Non-protected in positive class: %d (%0.0f%%)" % (non_prot_pos, non_prot_pos * 100.0 / non_prot_all))
-    print("Protected in positive class: %d (%0.0f%%)" % (prot_pos, prot_pos * 100.0 / prot_all))
-    print("P-rule is: %0.0f%%" % ( p_rule ))
-    return p_rule
-
-
-
-
-def add_intercept(x):
-
-    """ Add intercept to the data before linear classification """
-    m,n = x.shape
-    intercept = np.ones(m).reshape(m, 1) # the constant b
-    return np.concatenate((intercept, x), axis = 1)
 
 def check_binary(arr):
     "give an array of values, see if the values are only 0 and 1"
@@ -388,7 +326,6 @@ def test_sensitive_attr_constraint_cov(model, x_arr, y_arr_dist_boundary, x_cont
 
 def print_covariance_sensitive_attrs(model, x_arr, y_arr_dist_boundary, x_control, sensitive_attrs):
 
-
     """
     reutrns the covariance between sensitive features and distance from decision boundary
     """
@@ -428,7 +365,6 @@ def print_covariance_sensitive_attrs(model, x_arr, y_arr_dist_boundary, x_contro
             cov = max(cov_arr)
             
     return sensitive_attrs_to_cov_original
-
 
 def get_correlations(model, x_test, y_predicted, x_control_test, sensitive_attrs):
     
@@ -480,8 +416,6 @@ def get_correlations(model, x_test, y_predicted, x_control_test, sensitive_attrs
 
     return out_dict
 
-
-
 def get_constraint_list_cov(x_train, y_train, x_control_train, sensitive_attrs, sensitive_attrs_to_cov_thresh):
 
     """
@@ -515,8 +449,6 @@ def get_constraint_list_cov(x_train, y_train, x_control_train, sensitive_attrs, 
 
     return constraints
 
-
-
 def split_into_train_test(x_all, y_all, x_control_all, train_fold_size):
 
     split_point = int(round(float(x_all.shape[0]) * train_fold_size))
@@ -531,116 +463,3 @@ def split_into_train_test(x_all, y_all, x_control_all, train_fold_size):
         x_control_all_test[k] = x_control_all[k][split_point:]
 
     return x_all_train, y_all_train, x_control_all_train, x_all_test, y_all_test, x_control_all_test
-
-
-def get_avg_correlation_dict(correlation_dict_arr):
-    # make the structure for the correlation dict
-    correlation_dict_avg = {}
-    # print(correlation_dict_arr)
-    for k,v in correlation_dict_arr[0].items():
-        correlation_dict_avg[k] = {}
-        for feature_val, feature_dict in v.items():
-            correlation_dict_avg[k][feature_val] = {}
-            for class_label, frac_class in feature_dict.items():
-                correlation_dict_avg[k][feature_val][class_label] = []
-
-    # populate the correlation dict
-    for correlation_dict in correlation_dict_arr:
-        for k,v in correlation_dict.items():
-            for feature_val, feature_dict in v.items():
-                for class_label, frac_class in feature_dict.items():
-                    correlation_dict_avg[k][feature_val][class_label].append(frac_class)
-
-    # now take the averages
-    for k,v in correlation_dict_avg.items():
-        for feature_val, feature_dict in v.items():
-            for class_label, frac_class_arr in feature_dict.items():
-                correlation_dict_avg[k][feature_val][class_label] = np.mean(frac_class_arr)
-
-    return correlation_dict_avg
-
-
-
-def plot_cov_thresh_vs_acc_pos_ratio(x_all, y_all, x_control_all, num_folds, loss_function, apply_fairness_constraints, apply_accuracy_constraint, sep_constraint, sensitive_attrs):
-
-
-    # very the covariance threshold using a range of decreasing multiplicative factors and see the tradeoffs between accuracy and fairness
-    it = 0.05
-    cov_range = np.arange(1.0, 0.0-it, -it).tolist()
-    if apply_accuracy_constraint == True:
-        if sep_constraint == False:
-            it = 0.1
-            cov_range = np.arange(0.0, 1.0 + it, it).tolist()
-        if sep_constraint == True:
-            cov_range =  [0,1,5,10,20,50,100,500,1000]
-
-    
-    positive_class_label = 1 # positive class is +1
-    train_acc = []
-    test_acc = []
-    positive_per_category = defaultdict(list) # for each category (male / female), the frac of positive
-
-    # first get the original values of covariance in the unconstrained classifier -- these original values are not needed for reverse constraint    
-    test_acc_arr, train_acc_arr, correlation_dict_test_arr, correlation_dict_train_arr, cov_dict_test_arr, cov_dict_train_arr = compute_cross_validation_error(x_all, y_all, x_control_all, num_folds, loss_function, 0, apply_accuracy_constraint, sep_constraint, sensitive_attrs, [{} for i in range(0,num_folds)], 0)
-
-    for c in cov_range:
-        print("LOG: testing for multiplicative factor: %0.2f" % c)
-        sensitive_attrs_to_cov_original_arr_multiplied = []
-        for sensitive_attrs_to_cov_original in cov_dict_train_arr:
-            sensitive_attrs_to_cov_thresh = deepcopy(sensitive_attrs_to_cov_original)
-            for k in sensitive_attrs_to_cov_thresh.keys():
-                v = sensitive_attrs_to_cov_thresh[k]
-                if type(v) == type({}):
-                    for k1 in v.keys():
-                        v[k1] = v[k1] * c
-                else:
-                    sensitive_attrs_to_cov_thresh[k] = v * c
-            sensitive_attrs_to_cov_original_arr_multiplied.append(sensitive_attrs_to_cov_thresh)
-
-
-        test_acc_arr, train_acc_arr, correlation_dict_test_arr, correlation_dict_train_arr, cov_dict_test_arr, cov_dict_train_arr  = compute_cross_validation_error(x_all, y_all, x_control_all, num_folds, loss_function, apply_fairness_constraints, apply_accuracy_constraint, sep_constraint, sensitive_attrs, sensitive_attrs_to_cov_original_arr_multiplied, c)
-        test_acc.append(np.mean(test_acc_arr))
-
-
-        correlation_dict_train = get_avg_correlation_dict(correlation_dict_train_arr)
-        correlation_dict_test = get_avg_correlation_dict(correlation_dict_test_arr)
-        
-        # just plot the correlations for the first sensitive attr, the plotting can be extended for the other values, but as a proof of concept, we will jsut show for one
-        s = sensitive_attrs[0]    
-        
-        for k,v in correlation_dict_test[s].items():
-            if v.get(positive_class_label) is None:
-                positive_per_category[k].append(0.0)
-            else:
-                positive_per_category[k].append(v[positive_class_label])
-    
-    positive_per_category = dict(positive_per_category)
-    
-    p_rule_arr = (np.array(positive_per_category[0]) / np.array(positive_per_category[1])) * 100.0
-    
-
-    ax = plt.subplot(2,1,1)
-    plt.plot(cov_range, positive_per_category[0], "-o" , color="green", label = "Protected")
-    plt.plot(cov_range, positive_per_category[1], "-o", color="blue", label = "Non-protected")
-    ax.set_xlim([min(cov_range), max(cov_range)])
-    plt.xlabel('Multiplicative loss factor')
-    plt.ylabel('Perc. in positive class')
-    if apply_accuracy_constraint == False:
-        plt.gca().invert_xaxis()
-        plt.xlabel('Multiplicative covariance factor (c)')
-    ax.legend()
-
-    ax = plt.subplot(2,1,2)
-    plt.scatter(p_rule_arr, test_acc, color="red")
-    ax.set_xlim([min(p_rule_arr), max(max(p_rule_arr), 100)])
-    plt.xlabel('P% rule')
-    plt.ylabel('Accuracy')
-
-    plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=None, hspace=0.5)
-    plt.show()
-
-
-def get_line_coordinates(w, x1, x2):
-    y1 = (-w[0] - (w[1] * x1)) / w[2]
-    y2 = (-w[0] - (w[1] * x2)) / w[2]    
-    return y1,y2
