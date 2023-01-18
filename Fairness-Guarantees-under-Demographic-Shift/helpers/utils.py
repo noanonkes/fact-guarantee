@@ -1,17 +1,9 @@
 import sys
 import code
 import time
-import joblib
 import itertools
-import os
-import threading
-import copy
 import numpy as np
-import datetime
-from scipy.spatial import ConvexHull
-from matplotlib.collections import LineCollection
-from matplotlib.colors import to_rgba_array
-from scipy.stats import norm, chi, t
+from scipy.stats import t
 import re
 
 from scipy import optimize
@@ -211,7 +203,7 @@ def optimize_on_simplex(f, bounds):
                {'type': 'ineq', 'fun': lambda W: _bu - 1 + W.sum()}]
     result = optimize.shgo(_f, _bounds, constraints=_consts, callback=None, minimizer_kwargs={
                            'method': 'SLSQP', 'constraints': _consts}, options={'disp': False}, sampling_method='sobol')
-    
+
     return np.concatenate((result.x, [1-result.x.sum()]))
 
 
@@ -316,6 +308,8 @@ def is_iterable(x):
         return True
 
 # Maybe unnecessary since it gets defined in each file where it's used
+
+
 def make_seed(digits=8, random_state=np.random):
     return np.floor(random_state.rand()*10**digits).astype(int)
 
@@ -370,8 +364,84 @@ def stack_all_dicts_shallow(*dicts, na_val=None):
 
 
 #################
+#   Profiling   #
+#################
+
+class TimerCollection:
+    def __init__(self, name=None):
+        self.name = name
+        self.reset()
+
+    def tic(self, name):
+        if not (name in self._times.keys()):
+            self._times[name] = []
+        self._tics[name] = time.time()
+
+    def toc(self, name):
+        t = time.time() - self._tics[name]
+        self._times[name].append(t)
+        del self._tics[name]
+        return t
+
+    def toctic(self, name):
+        t1 = time.time()
+        t0 = self._tics[name]
+        self._times[name].append(t1-t0)
+        self._tics[name] = t1
+        return t1-t0
+
+    def reset(self, name=None):
+        if name is None:
+            self._times = {}
+            self._tics = {}
+        else:
+            self._times[name] = []
+            del self._tics[name]
+
+    def get_avg_time(self, name=None):
+        if name is None:
+            return {name: np.mean(times) for name, times in self._times.items() if len(times) > 0}
+        return np.mean(self._times[name])
+
+    def print_avg_times(self, pad=''):
+        key_length = max([len(k) for k in self._times.keys()])
+        name_str = '' if self.name is None else f'[{self.name}]'
+        print(f'{pad}{name_str} Average Times:')
+        for name, t in self.get_avg_time().items():
+            print(f'{pad}   {name.rjust(key_length)}: {t}')
+
+    def get_total_time(self, name=None):
+        if name is None:
+            return {name: np.sum(times) for name, times in self._times.items() if len(times) > 0}
+        return np.mean(self._times[name])
+
+    def print_total_times(self, pad=''):
+        key_length = max([len(k) for k in self._times.keys()])
+        name_str = '' if self.name is None else f'[{self.name}]'
+        print(f'{pad}{name_str} Total Times:')
+        for name, t in self.get_total_time().items():
+            print(f'{pad}   {name.rjust(key_length)}: {t}')
+
+    def get_num_tics(self, name=None):
+        if name is None:
+            return {name: len(times) for name, times in self._times.items()}
+        return len(self._times[name])
+
+    def print_num_tics(self, pad=''):
+        key_length = max([len(k) for k in self._times.keys()])
+        name_str = '' if self.name is None else f'[{self.name}]'
+        print(f'{pad}{name_str} Tic Counts:')
+        for name, t in self.get_num_tics().items():
+            print(f'{pad}   {name.rjust(key_length)}: {t}')
+
+    def get_times(self, name=None):
+        if name is None:
+            return {name: times for name, times in self._times.items()}
+        return self._times[name]
+#################
 #   Debugging   #
 #################
+
 
 def keyboard(quit=False, banner=''):
     ''' Interrupt program flow and start an interactive session in the current frame.

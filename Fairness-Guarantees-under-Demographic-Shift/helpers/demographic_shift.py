@@ -3,8 +3,6 @@ from copy import deepcopy
 from .constraint_manager import ConstraintManager, get_parser
 from .utils import optimize_on_simplex
 
-from scipy import optimize
-
 def evaluate_antagonistic_demographic_shift(predictf, constraints, population, opts):
     assert len(constraints) == 1, ('evaluate_antagonistic_demographic_shift(): This function is only designed to evaluate shift under a single constraint. %d Constraints provided.' % len(constraints))
 

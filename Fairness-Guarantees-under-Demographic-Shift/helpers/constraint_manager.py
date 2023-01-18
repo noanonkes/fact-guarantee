@@ -1,11 +1,9 @@
 import numpy as np
 from scipy.stats import t
-from time import time
 import warnings
 
 from .parser import get_parser
 from .expressions import *
-from .general import TimerCollection
 from .discrete_robustness import *
 from .utils import *
 

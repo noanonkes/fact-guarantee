@@ -3,7 +3,7 @@ import multiprocessing.managers as managers
 import time
 import numpy as np
 import pandas as pd
-import helpers
+import helpers.utils as utils
 import os
 import signal
 from collections.abc import Sequence
@@ -480,7 +480,7 @@ def consolidate_results(n_workers, task_iterator, fname, result_locks, debug=Fal
         with pd.HDFStore(i_fname.replace('incomplete','reference')) as store:
             print(i_fname.replace('incomplete','reference'))
             store.put('results', iresults)
-        helpers.keyboard()
+        utils.keyboard()
     else:
         # Save completed trials
         if len(cresults) > 0:
@@ -528,7 +528,7 @@ def prepare_paths(dirname, tparams, mparams, smla_names, root='results', filenam
     print('Preparing results directory.')
     is_new  = True
     basedir = os.path.join(root, dirname)
-    for subdir in helpers.general.subdir_incrementer(basedir):
+    for subdir in utils.subdir_incrementer(basedir):
         if not(os.path.isdir(subdir)):
             break
         is_new = False
@@ -545,7 +545,7 @@ def prepare_paths(dirname, tparams, mparams, smla_names, root='results', filenam
 
     # Save the parameters to the hdf5 store
     with pd.HDFStore(save_path) as store:
-        store.append('task_parameters', pd.DataFrame(helpers.general.stack_all_dicts(*tparams)))
+        store.append('task_parameters', pd.DataFrame(utils.stack_all_dicts(*tparams)))
         store.append('meta', pd.DataFrame({'smla_names':smla_names}))
 
     return save_path

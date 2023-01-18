@@ -1,11 +1,9 @@
 import numpy as np
-from scipy import stats
 from scipy.optimize import minimize, LinearConstraint
 from time import time
-
 import warnings
-
 import sys, code
+
 def keyboard(quit=False, banner=''):
 	''' Interrupt program flow and start an interactive session in the current frame.
 		 * quit   : If True, exit the program upon terminating the session. '''

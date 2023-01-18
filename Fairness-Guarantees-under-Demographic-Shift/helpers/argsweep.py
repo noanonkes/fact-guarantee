@@ -3,8 +3,7 @@ import enum
 import functools
 import numpy as np
 
-
-
+# Maybe add this to the utils file ?
 
 ################################
 #   CLI for Parameter Sweeps   #

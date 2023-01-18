@@ -1,9 +1,7 @@
 import numpy as np
-import pandas as pd
 import os.path
 
-from datasets.dataset import ClassificationDataset
-from helpers.dataset import standardized, with_intercept, with_feature
+from datasets.dataset import *
 
 BASE_URL = os.path.join('datasets', 'brazil', 'brazil_with_race.npz')
 
@@ -55,4 +53,3 @@ def load(gpa_cutoff=3.0, r_train=0.4, r_candidate=0.2, seed=None, include_interc
 	contents = { 'X':X, 'Y':Y, 'R':R, 'S':S }
 	all_labels = [0, 1]
 	return ClassificationDataset(all_labels, n_candidate, n_safety, n_test, seed=seed, meta_information=meta_information, **contents)
-

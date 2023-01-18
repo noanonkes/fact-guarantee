@@ -1,4 +1,4 @@
-from helpers.general import TimerCollection
+from helpers.utils import TimerCollection
 import numpy as np
 from functools import partial
 

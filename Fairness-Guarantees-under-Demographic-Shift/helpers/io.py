@@ -37,11 +37,7 @@ class SMLAResultsReader(object):
 	def get_col(self, k, name=None, return_filtered=False):
 		results, tparams, mparams = self._data
 		I = np.repeat(True, len(results))
-		# print('#'*100)
-		# print(name)
-		# print(mparams.keys())
-		# print('#'*100)
-		# print(mparams.keys())
+
 		if not(name is None) and (k in mparams[name].keys()):
 			I  = (results.name == name).values
 			mp = mparams[name].assign(pid=mparams[name].index, name=name)
@@ -101,9 +97,7 @@ class SMLAResultsReader(object):
 		E[y] = E[y].astype(float)
 
 		E_gb = E.groupby(x)[y]
-		# data = { 'mean' : E_gb.mean(),
-		# 	     'std'  : E_gb.std(),
-		# 	     'n'    : E_gb.count() }
+
 		D = E_gb.aggregate([ 'mean', 'std', 'count' ])
 		D['x'] = D.index
 		D = D.reset_index(drop=True)
@@ -111,6 +105,5 @@ class SMLAResultsReader(object):
 			r = E[E[x].isna()][y].aggregate([ 'mean', 'std', 'count' ])
 			r['x'] = np.nan
 			D = D.append(r, ignore_index=True)
-		# data['x'] = data['n'].index.to_series()
-		# df = pd.DataFrame(data).reset_index(drop=True)
+
 		return D
