@@ -21,50 +21,6 @@ def run(n_trials, fname, evaluators, load_datasetf, tparams, mparams, n_workers,
     print()
     return _run_experiment(n_trials, fname, evaluators, load_datasetf, tparams, mparams, n_workers, seed)
 
-def run_existing(n_trials, fname, evaluators, load_datasetf, n_workers, status_delay=1.0, seed=None):
-    n_workers = max(n_workers, 1)
-    all_results = []
-
-    # Cleanup in case there were existing backup or worker files from a previous run
-    for i in range(n_workers):
-        wfname = fname.replace('.h5','.worker_%d.h5'%i)
-        if os.path.exists(wfname):
-            os.remove(wfname)
-    basedir = os.path.dirname(fname)
-    if os.path.exists(basedir):
-        for fn in os.listdir(basedir):
-            if fn.endswith('.bak'):
-                os.remove(os.path.join(basedir, fn))
-
-    # Get existsing parameters and results
-    with pd.HDFStore(fname) as store:
-        # Get existing parameters
-        mnames  = [ k.split('/')[-1] for k in store.keys() if k.startswith('/method_parameters/') ]
-        tparams = [ {k:s[k] for k in s.keys() } for _,s in store['/task_parameters'].iterrows() ]
-        mparams = {nm:[ {k:s[k] for k in s.keys()} for _,s in store['/method_parameters/%s'%nm].iterrows() ] for nm in mnames}
-        # Get existing results and adjust the total number of trials
-        n_trials_prev = 0
-        if '/results' in store.keys():
-            n_trials_prev = store['results'].groupby(['name','tid','pid'], as_index=False).size().min()
-            n_trials_prev = 0 if np.isnan(n_trials_prev) else n_trials_prev
-            all_results.append(store['results'])
-        if n_trials_prev >= n_trials:
-            print('%d trials were requested, but there were already %d trials computed. Exiting.' % (n_trials,n_trials_prev))
-            return None
-        else:
-            print('%d trials were requested, with %d trials already computed. Computing %d more trials.' % (n_trials,n_trials_prev,n_trials-n_trials_prev))
-            n_trials = n_trials - n_trials_prev
-    # Get existing incomplete results
-    partials = None
-    i_fname  = fname.replace('.h5', '.incomplete.h5')
-    if os.path.exists(i_fname):
-        with pd.HDFStore(i_fname) as store:
-            if '/results' in store.keys():
-                partials = store['results'][['name','tid','pid','seed']]
-
-    return _run_experiment(n_trials, fname, evaluators, load_datasetf, tparams, mparams, n_workers, seed=seed, partials=partials)
-
-
 ###############################
 #    Parallel: Task Object    #
 ###############################
@@ -240,7 +196,7 @@ ExperimentManager.register('TaskIterator', TaskIterator, proxytype=IteratorProxy
 ##################################
 #    Parallel: Worker Process    #
 ##################################
-import sys
+
 def process_tasks(wid, tasks, n_trials, fname, evaluators, load_datasetf, all_tparams, all_mparams, result_lock):
     ignore_signals()
     save_data = []

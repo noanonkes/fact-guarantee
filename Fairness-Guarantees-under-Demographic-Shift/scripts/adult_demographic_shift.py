@@ -363,7 +363,7 @@ if __name__ == '__main__':
         model_evaluators = {
             'SC': eval_hoeff_sc,
             'QSC': eval_ttest_sc,
-            'SRC': eval_hoeff_sc_robust,
+            # 'SRC': eval_hoeff_sc_robust,
             'QSRC': eval_ttest_sc_robust,
             'FairConst': eval_fair_constraints,
             'FairlearnSVC': eval_fairlearn,
@@ -392,7 +392,7 @@ if __name__ == '__main__':
             smla_dshift_opts = {
                 'demographic_variable': D,
                 'demographic_variable_values': unique_D_values,
-                'demographic_marginals': np.array([0.15, 0.85]),
+                'demographic_marginals': np.array([0.15, 0.85]), # page 19 paper table (a) 
                 'known_demographic_terms': ds.get_population_conditionals(population.all_sets(), constraints, D)
             }
         else:
