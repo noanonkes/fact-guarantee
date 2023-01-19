@@ -137,10 +137,6 @@ class TaskIterator:
         try:
             # Get the next task in this trial
             return self._next_in_trial()
-            # if self.tnum <= 1:
-            #     return self._next_in_trial()
-            # else:
-            #     raise StopIteration
         except StopIteration:
             # We've run out of tasks for this trial - start a new one
             self.setup_next_trial()
@@ -199,7 +195,6 @@ class TaskIterator:
         attempts = 0
         # Keep generating seeds until all splits have at least one of each label and T value
         while attempts < 10:
-            # attempts += 1
             if len(self._seeds) > 0:
                 seed = self.seed
                 self.seed = self._seeds.pop()
@@ -210,48 +205,11 @@ class TaskIterator:
                 valid = True
                 for tp in self._tparams:
                     dataset = self._loadf(tp, seed=self.seed) 
-                    # if isinstance(dataset, datasets.ClassificationDataset):
-                    #     if len(np.unique(dataset._T)) > 1:
-                    #         split = dataset.safety_splits()
-                    #         if len(np.unique(split['Y'])) == 1 or len(np.unique(split['T'])) == 1:
-                    #             valid = False
-                    #             continue
-                    #         split = dataset.optimization_splits()
-                    #         if len(np.unique(split['Y'])) == 1 or len(np.unique(split['T'])) == 1:
-                    #             valid = False
-                    #             continue
-                    #         split = dataset.training_splits()
-                    #         if len(np.unique(split['Y'])) == 1 or len(np.unique(split['T'])) == 1:
-                    #             valid = False
-                    #             continue
-                    #         split = dataset.testing_splits()
-                    #         if len(np.unique(split['Y'])) == 1 or len(np.unique(split['T'])) == 1:
-                    #             valid = False
-                    #             continue
-                    # elif isinstance(dataset, datasets.RLDataset):
-                    #     if len(np.unique(dataset._T)) > 1:
-                    #         split = dataset.safety_splits()
-                    #         if len(np.unique(split['T'])) == 1:
-                    #             valid = False
-                    #             continue
-                    #         split = dataset.optimization_splits()
-                    #         if len(np.unique(split['T'])) == 1:
-                    #             valid = False
-                    #             continue
-                    #         split = dataset.training_splits()
-                    #         if len(np.unique(split['T'])) == 1:
-                    #             valid = False
-                    #             continue
-                    #         split = dataset.testing_splits()
-                    #         if len(np.unique(split['T'])) == 1:
-                    #             valid = False
-                    #             continue
                 if valid:
                     break
 
     def make_task(self):
         name = self._method_names[self.nid]
-        # print(self.seed)
         task = Task(name, self.tid, self.pid, self.seed)
         self.pid  += 1
         self.cnum += 1
@@ -293,7 +251,6 @@ def process_tasks(wid, tasks, n_trials, fname, evaluators, load_datasetf, all_tp
             name = task.name
             tparams = all_tparams[task.tid]
             mparams = all_mparams[name][task.pid]
-
             if not(prev_tid == task.tid): # only load the dataset if it's not loaded already
                 dataset = load_datasetf(tparams, seed=task.seed)
                 prev_tid = task.tid
@@ -370,7 +327,7 @@ def _run_experiment(n_trials, fname, evaluators, load_datasetf, tparams, mparams
                 pass
             print('\nKeyboardInterrupt')
             n_interrupts += 1
-            if n_interrupts >= 50:
+            if n_interrupts >= 2:
                 print('Spam detected. Exiting.')
                 for w in workers:
                     w.terminate()
@@ -414,10 +371,8 @@ def save_worker_results(fname, wid, save_data, lock, block=False):
 def consolidate(n_workers, task_iterator, fname, result_locks, exit, debug=False):
     ignore_signals()
     while not(exit.is_set()):
-        # print('\nCONSOLIDATING\n')
         consolidate_results(n_workers, task_iterator, fname, result_locks, debug=debug)
         time.sleep(1.0)
-    # print('\nCONSOLIDATOR EXITING...\n')
 
 def consolidate_results(n_workers, task_iterator, fname, result_locks, debug=False):
     # Create a helper for extracting files and making backups
@@ -433,10 +388,6 @@ def consolidate_results(n_workers, task_iterator, fname, result_locks, debug=Fal
                 # Move the file to a backup if required
                 if move_existing:
                     bak_fname = fname + '.bak'
-                    # print('\nDoes %s already exist? %r\n' % (bak_fname,os.path.exists(bak_fname)))
-                    # if os.path.exists(bak_fname):
-                    #     print('\'%s\' already exists.' % bak_fname)
-                    #     os.remove(bak_fname)
                     try:
                         os.rename(fname, bak_fname)
                     except Exception as e:
@@ -502,13 +453,6 @@ def consolidate_results(n_workers, task_iterator, fname, result_locks, debug=Fal
     # Print a debug message if requred
     if debug:
         print('...............................................')
-        # with pd.HDFStore(fname) as store:
-        #     if '/results' in store.keys():
-        #         print('Completed results:')
-        #         print( store['results'].groupby('seed').size())
-        #     else:
-        #         print('No complete results.')
-        # print()
         with pd.HDFStore(i_fname) as store:
             if '/results' in store.keys():
                 print('Incomplete results:')

@@ -430,6 +430,9 @@ if __name__ == '__main__':
         tparams, mparams = launcher.make_parameters(
             tparams, mparams, expand=args_to_expand)
 
+        # Fix so FairlearnSVC doesn't run twice
+        mparams['FairlearnSVC'] = [mparams['FairlearnSVC'][0]]
+
         print(ds.make_intervals(Pr_D, args.dshift_alpha, epsilon=1e-3))
         print(ds.make_intervals(Pr_D, args.dshift_alpha, epsilon=1e-3))
 

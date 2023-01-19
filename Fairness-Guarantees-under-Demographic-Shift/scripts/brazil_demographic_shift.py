@@ -405,18 +405,18 @@ if __name__ == '__main__':
             mparams[name]['dshift_var'] = args.dshift_var
             mparams[name]['r_cand_v_safe'] = args.r_cand_v_safe
             mparams[name].update(smla_dshift_opts)
-        # mparams['SGD'].update(loss=['hinge','log','perceptron'], penalty='l2', fit_intercept=False)
-        # mparams['SVC'].update(kernel=['rbf'], gamma=2, C=1)
-        # mparams['LinSVC'].update(loss=['hinge'], penalty='l2', fit_intercept=False)
         mparams['FairConst'].update(cov=[0.01])
         mparams['FairlearnSVC'].update(
             loss=['hinge'], penalty='l2', fit_intercept=False, fl_e=[0.01, 0.1])
 
-        #    Expand the parameter sets into a set of configurations
+        #  Expand the parameter sets into a set of configurations
         args_to_expand = parser._sweep_argnames + \
             ['loss', 'kernel', 'cov', 'fl_e', 'n_train']
         tparams, mparams = launcher.make_parameters(
             tparams, mparams, expand=args_to_expand)
+
+        # Fix so FairlearnSVC doesn't run twice
+        mparams['FairlearnSVC'] = [mparams['FairlearnSVC'][0]]
 
         print()
         # Create a results file and directory
