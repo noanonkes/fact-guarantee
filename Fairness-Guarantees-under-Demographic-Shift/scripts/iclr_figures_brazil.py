@@ -8,7 +8,7 @@ from matplotlib.colors import hex2color
 
 from helpers.io import SMLAResultsReader
 from helpers.argsweep    import ArgumentSweeper
-from datasets import brazil_with_race as brazil
+import datasets.brazil.brazil_with_race as brazil
 
 plt.rcParams['text.usetex'] = True
 plt.rcParams['text.latex.preamble'] = [r'\usepackage{amsmath}']
@@ -26,7 +26,7 @@ if __name__ == '__main__':
 	figpath = f'figures/iclr_{mode}_demographic_shift_brazil_rl'
 
 	# Figure format
-	fmt = 'pdf'
+	fmt = 'png'
 	if fmt == 'pdf':
 		matplotlib.rc('pdf', fonttype=42)
 
@@ -406,7 +406,6 @@ if __name__ == '__main__':
 		ax_ar.xaxis.set_major_formatter(ThousandsFmt)
 		# ax_ar.yaxis.set_major_formatter(PercentageFmt)
 
-
 		# Plot accuracy values
 		for mn,c,acc,acc_se in zip(mnames[::-1],colors[::-1],(oacc_v_n.T)[::-1],(oacc_se_v_n.T)[::-1]):
 			ax_oacc.plot(nvals, acc, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
@@ -442,7 +441,6 @@ if __name__ == '__main__':
 		ax_ofr.set_xlim(right=max(nvals))
 		ax_ofr.yaxis.set_major_formatter(PercentageFmt)
 		ax_ofr.xaxis.set_major_formatter(ThousandsFmt)
-
 		for mn, c,fr,se in zip(mnames[::-1],colors[::-1],(dfrates.T)[::-1], (dfrates_se.T)[::-1]):
 			ax_dfr.plot(nvals, fr*100, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
 			ax_dfr.fill_between(nvals, (fr+se)*100, (fr-se)*100, color=c, linewidth=0, alpha=0.25)
@@ -508,7 +506,6 @@ if __name__ == '__main__':
 		ax_ar.set_ylim((0,1))
 		ax_ar.xaxis.set_major_formatter(ThousandsFmt)
 		# ax_ar.yaxis.set_major_formatter(PercentageFmt)
-
 
 		# Plot accuracy values
 		for mn,c,acc,acc_se in zip(mnames[::-1],colors[::-1],(oacc_v_n.T)[::-1],(oacc_se_v_n.T)[::-1]):
@@ -611,7 +608,6 @@ if __name__ == '__main__':
 		ax_ar.set_ylim((0,1))
 		ax_ar.xaxis.set_major_formatter(ThousandsFmt)
 		# ax_ar.yaxis.set_major_formatter(PercentageFmt)
-
 
 		# Plot accuracy values
 		for mn,c,acc,acc_se in zip(mnames[::-1],colors[::-1],(oacc_v_n.T)[::-1],(oacc_se_v_n.T)[::-1]):

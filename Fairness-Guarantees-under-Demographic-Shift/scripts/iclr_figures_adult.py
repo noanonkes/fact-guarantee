@@ -6,14 +6,14 @@ from matplotlib import pyplot as plt
 import matplotlib.ticker as mtick
 from matplotlib.colors import hex2color
 
-import helpers
-from helpers import keyboard
+#import helpers
+#from helpers import keyboard
 from helpers.io import SMLAResultsReader
-from datasets import adult
-import matplotlib.gridspec as gridspec
+import datasets.adult.adult as adult
+#import matplotlib.gridspec as gridspec
 from helpers.argsweep    import ArgumentSweeper
 
-import pandas as pd
+#import pandas as pd
 
 plt.rcParams['text.usetex'] = True
 plt.rcParams['text.latex.preamble'] = [r'\usepackage{amsmath}']
@@ -54,24 +54,24 @@ if __name__ == '__main__':
 		'eo':eo_path
 	}
 
-	def get(path):
-		results_container = SMLAResultsReader(path)
-		results_container.open()
-		task_parameters = results_container._store['task_parameters']
-		return results_container._store['results']
-	def test(results):
-		names = np.unique(results.name)
-		for name in names:
-			m_results = results[results.name==name]
-			print('%s:' % name)
-			for pid in np.unique(m_results.pid):
-				print('  pid %d:' % pid)
-				for tid in np.unique(m_results.tid):
-					print('    tid %d: %d' % (tid, len(m_results[np.logical_and(m_results.tid==tid, m_results.pid==pid)])))
-	for mn,path in all_paths.items():
-		print()
-		print(mn)
-		test(get(path))
+	# def get(path):
+	# 	results_container = SMLAResultsReader(path)
+	# 	results_container.open()
+	# 	task_parameters = results_container._store['task_parameters']
+	# 	return results_container._store['results']
+	# def test(results):
+	# 	names = np.unique(results.name)
+	# 	for name in names:
+	# 		m_results = results[results.name==name]
+	# 		print('%s:' % name)
+	# 		for pid in np.unique(m_results.pid):
+	# 			print('  pid %d:' % pid)
+	# 			for tid in np.unique(m_results.tid):
+	# 				print('    tid %d: %d' % (tid, len(m_results[np.logical_and(m_results.tid==tid, m_results.pid==pid)])))
+	# for mn,path in all_paths.items():
+	# 	print()
+	# 	print(mn)
+	# 	test(get(path))
 
 	def thousands_fmt(x, pos):
 		return f'{x/10**3:,.0f}K'
@@ -230,11 +230,6 @@ if __name__ == '__main__':
 					_dlrates.append(np.nan)
 					_olrates_se.append(np.nan)
 					_dlrates_se.append(np.nan)
-				# print(mname)
-				# print('OA', _olrates)
-				# print('OG', original_gs)
-				# print('AA', _dlrates)
-				# print('AG', antagonist_gs)
 
 			arates.append(_arates)
 			ofrates.append(_ofrates)
@@ -275,9 +270,7 @@ if __name__ == '__main__':
 			elif nm == 'FairRobust':
 				colors.append(hex2color('#6f32a8'))
 			else:
-				colors.append(hex2color('#e41a1c'))
-		
-	
+				colors.append(hex2color('#e41a1c'))	
 		def add_noise(X, e=0.01):
 			return X + e*(np.random.random(size=X.shape) - 0.5)
 		out = {
@@ -370,7 +363,6 @@ if __name__ == '__main__':
 		ax_oacc.set_xlim(right=max(nvals))
 		ax_oacc.yaxis.set_major_formatter(PercentageFmt)
 		ax_oacc.xaxis.set_major_formatter(ThousandsFmt)
-
 
 		for mn,c,acc,acc_se in zip(mnames[::-1],colors[::-1],(dacc_v_n.T)[::-1],(dacc_se_v_n.T)[::-1]):
 			ax_dacc.plot(nvals, acc, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
@@ -497,7 +489,6 @@ if __name__ == '__main__':
 		ax_oacc.set_xlim(right=max(nvals))
 		ax_oacc.yaxis.set_major_formatter(PercentageFmt)
 		ax_oacc.xaxis.set_major_formatter(ThousandsFmt)
-		
 
 		for mn,c,acc,acc_se in zip(mnames[::-1],colors[::-1],(dacc_v_n.T)[::-1],(dacc_se_v_n.T)[::-1]):
 			ax_dacc.plot(nvals, acc, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
