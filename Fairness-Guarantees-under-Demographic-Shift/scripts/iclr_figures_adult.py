@@ -6,17 +6,10 @@ from matplotlib import pyplot as plt
 import matplotlib.ticker as mtick
 from matplotlib.colors import hex2color
 
-#import helpers
-#from helpers import keyboard
 from helpers.io import SMLAResultsReader
 import datasets.adult.adult as adult
-#import matplotlib.gridspec as gridspec
 from helpers.argsweep    import ArgumentSweeper
 
-#import pandas as pd
-
-plt.rcParams['text.usetex'] = True
-plt.rcParams['text.latex.preamble'] = [r'\usepackage{amsmath}']
 
 if __name__ == '__main__':
 	with ArgumentSweeper() as parser:
@@ -32,60 +25,26 @@ if __name__ == '__main__':
 
 	# Figure format
 	fmt = 'png'
-	if fmt == 'pdf':
-		matplotlib.rc('pdf', fonttype=42)
 
 	# Figure DPI for raster formats
 	dpi = 200
 
 	# Paths to results files. Figures will be skipped if data cannot be found.
-	# Note that the legend is based off of the EO figure, so it will not be 
-	# generated if EO data is unavailable.
 	di_path     = f'results/iclr_adult_{mode}_ds_rl_di_0/iclr_adult_{mode}_ds_rl_di.h5'
 	dp_path     = f'results/iclr_adult_{mode}_ds_rl_dp_0/iclr_adult_{mode}_ds_rl_dp.h5'
-	eodds_path  = f'results/iclr_adult_{mode}_ds_rl_eodds_0/iclr_adult_{mode}_ds_rl_eodds.h5'
-	pe_path     = f'results/iclr_adult_{mode}_ds_rl_pe_0/iclr_adult_{mode}_ds_rl_pe.h5'
-	eo_path     = f'results/iclr_adult_{mode}_ds_rl_eopp_0/iclr_adult_{mode}_ds_rl_eopp.h5'
+
 	all_paths = {
 		'di':di_path,
 		'dp':dp_path,
-		'eodds':eodds_path,
-		'pe':pe_path,
-		'eo':eo_path
 	}
-
-	# def get(path):
-	# 	results_container = SMLAResultsReader(path)
-	# 	results_container.open()
-	# 	task_parameters = results_container._store['task_parameters']
-	# 	return results_container._store['results']
-	# def test(results):
-	# 	names = np.unique(results.name)
-	# 	for name in names:
-	# 		m_results = results[results.name==name]
-	# 		print('%s:' % name)
-	# 		for pid in np.unique(m_results.pid):
-	# 			print('  pid %d:' % pid)
-	# 			for tid in np.unique(m_results.tid):
-	# 				print('    tid %d: %d' % (tid, len(m_results[np.logical_and(m_results.tid==tid, m_results.pid==pid)])))
-	# for mn,path in all_paths.items():
-	# 	print()
-	# 	print(mn)
-	# 	test(get(path))
 
 	def thousands_fmt(x, pos):
 		return f'{x/10**3:,.0f}K'
 	def percentage_fmt(x, pos):
-		return f'{x:,.0f}\%'
+		return f'{x:,.0f}%'
+	
 	ThousandsFmt = mtick.FuncFormatter(thousands_fmt)
 	PercentageFmt = mtick.FuncFormatter(percentage_fmt)
-
-	# Epsilon constants used in experiments
-	di_e     =  -0.80
-	dp_e     =  0.15 
-	eodds_e  =  0.35 
-	pe_e     =  0.2 
-	eo_e     =  0.2
 
 	# Value of delta used in experiments
 	delta = 0.05
@@ -97,40 +56,29 @@ if __name__ == '__main__':
 	pprint_map = {
 		'SC'              : 'Seldonian',
 		'QSC'             : 'Quasi-Seldonian',
-		'SRC'             : 'Seldonian$_{GDS}$',
 		'QSRC'            : 'Shifty',
 		'FairlearnSVC'    : 'Fairlearn',
-		'LinSVC'          : 'Baseline', #'SVC$_{linear}$',
-		'SGD' 	          : 'Baseline', #'SGD',
-		'SGD(hinge)'      : 'SGD$_{hinge}$',
-		'SGD(log)' 	      : 'SGD$_{log}$',
-		'SGD(perceptron)' : 'SGD$_{perc}$',
-		'SVC' 	          : 'SVC$_{rbf}$',
 		'FairConst'       : 'Fairness Constraints',
 		'FairRobust'      : 'RFLearn'
 	}
+
 	legend_priority = {
 	'Seldonian':0,
 	'Quasi-Seldonian':-0.5,
-	'Seldonian$_{GDS}$':1,
 	'Shifty':0.5,
-	'Baseline':-1,
-	'Baseline':-1,
 	'Fairness Constraints':-0.7,
 	'Fairlearn':-0.71,
 	'RFLearn':0.1,
 	}
+
 	standard_smla_names = ['SC', 'QSC']
-	robust_smla_names   = ['SRC', 'QSRC']
+	robust_smla_names   = ['QSRC']
 
 	keep_mname_list = ['SC','QSC','QSRC','FairConst','FairlearnSVC','FairRobust']
-	# keep_mname_list = ['QSRC','FairRobust']
 
 	# Create the figure directory if nonexistent
 	if save_figs and not(os.path.isdir(figpath)):
 		os.makedirs(figpath)		
-
-
 
 	#############
 	#  Helpers  #
@@ -144,20 +92,16 @@ if __name__ == '__main__':
 		fig.savefig(path, *args, **kwargs)
 
 	def get_ls(name):
-		# if name == 'SC' or name == 'SRC':
-		# 	return '--'
-		# elif name == 'QSC' or name == 'QSRC':
-		# 	return '-'
 		if name == 'QSC':
 			return '--'
 		return '-'
 
 	def get_lw(name):
-		if name == 'SRC' or name == 'QSRC':
+		if name == 'QSRC':
 			return 2
 		return 1
 
-	def get_adult_stats(path, include_fairlearn=False, include_fairconst=False, keep_mname_list=keep_mname_list):
+	def get_adult_stats(path, keep_mname_list=keep_mname_list):
 		''' Helper for extracting resutls from adult results files. '''
 		results_container = SMLAResultsReader(path)
 		results_container.open()
@@ -252,7 +196,6 @@ if __name__ == '__main__':
 		olrates_se = np.array(olrates_se)
 		dlrates    = np.array(dlrates)
 		dlrates_se = np.array(dlrates_se)
-		# results_container.close()
 
 		# Assign colors to each method
 		# This part is a hack to get reasonable colors for each method. If more methods are
@@ -291,602 +234,114 @@ if __name__ == '__main__':
 		}
 		return out
 
+	def plotting(path):
 
-
-
-	####################################################################
-	# DisparateImpact: Accuracy, Acceptance Rates, and Failure Rates #
-	####################################################################
-
-
-	ff_acc = plt.figure(constrained_layout=False, figsize=(7, 2))
-	ff_dfr = plt.figure(constrained_layout=False, figsize=(7, 2))
-
-	gs_acc = ff_acc.add_gridspec(1, 2, hspace=1.0,wspace=0.5)
-	gs_dfr = ff_acc.add_gridspec(1, 2, hspace=1.0,wspace=0.5)
-
-	ax_dacc_di  = ff_acc.add_subplot(gs_acc[0,0])
-	ax_dacc_dp  = ff_acc.add_subplot(gs_acc[0,1])
-	ax_dfr_di   = ff_dfr.add_subplot(gs_dfr[0,0])
-	ax_dfr_dp   = ff_dfr.add_subplot(gs_dfr[0,1])
-
-
-
-	if not(os.path.exists(di_path)):
-		print('No results found at path \'%s\'. Skipped.' % di_path)
-	else:
-		D = get_adult_stats(di_path)
-		arates = D['arate_v_n']
-		arates_se = D['arate_se_v_n']
-		ofrates = D['ofrate_v_n']
-		ofrates_se = D['ofrate_se_v_n']
-		dfrates = D['dfrate_v_n']
-		dfrates_se = D['dfrate_se_v_n']
-		oacc_v_n = D['olrate_v_n']
-		oacc_se_v_n = D['olrate_se_v_n']
-		dacc_v_n = D['dlrate_v_n']
-		dacc_se_v_n = D['dlrate_se_v_n']
-		mnames = D['mnames']
-		colors = D['colors']
-		nvals = D['n_train']
-		
-		fig = plt.figure(constrained_layout=False, figsize=(10, 4))
-		gs = fig.add_gridspec(2, 6, hspace=1.0,wspace=2)
-
-		ax_ar   = fig.add_subplot(gs[:, :2])
-		ax_oacc = fig.add_subplot(gs[0, 2:4])
-		ax_ofr  = fig.add_subplot(gs[0, 4:6])
-		ax_dacc = fig.add_subplot(gs[1, 2:4])
-		ax_dfr  = fig.add_subplot(gs[1, 4:6])
-		
-		# Plot acceptance rate
-		for mn,c,ar,se in zip(mnames[::-1],colors[::-1],(arates.T)[::-1], (arates_se.T)[::-1]):
-			ax_ar.plot(nvals, (1-ar), c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_ar.fill_between(nvals, ((1-ar)+se), ((1-ar)-se), alpha=0.25, linewidth=0, color=c)
-		ax_ar.set_xlabel('Training Samples', labelpad=3.5)
-		ax_ar.set_ylabel('$\Pr(\\texttt{NO\_SOLUTION\_FOUND})$', labelpad=7)
-		# ax_ar.set_xscale("log")
-		ax_ar.set_xlim(right=max(nvals))
-		ax_ar.set_ylim((0,1))
-		ax_ar.xaxis.set_major_formatter(ThousandsFmt)
-		# ax_ar.yaxis.set_major_formatter(PercentageFmt)
-
-
-		# Plot accuracy values
-		for mn,c,acc,acc_se in zip(mnames[::-1],colors[::-1],(oacc_v_n.T)[::-1],(oacc_se_v_n.T)[::-1]):
-			ax_oacc.plot(nvals, acc, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_oacc.fill_between(nvals, acc+acc_se, acc-acc_se, alpha=0.2, color=c, linewidth=0)
-		ax_oacc.set_xlabel('Training Samples', labelpad=3.5)
-		ax_oacc.set_ylabel('Accuracy\n(Original)', labelpad=7)
-		# ax_oacc.set_ylim((33,67))
-		# ax_oacc.set_xscale("log")
-		ax_oacc.set_xlim(right=max(nvals))
-		ax_oacc.yaxis.set_major_formatter(PercentageFmt)
-		ax_oacc.xaxis.set_major_formatter(ThousandsFmt)
-
-		for mn,c,acc,acc_se in zip(mnames[::-1],colors[::-1],(dacc_v_n.T)[::-1],(dacc_se_v_n.T)[::-1]):
-			ax_dacc.plot(nvals, acc, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_dacc.fill_between(nvals, acc+acc_se, acc-acc_se, alpha=0.2, color=c, linewidth=0)
-		ax_dacc.set_xlabel('Training Samples', labelpad=3.5)
-		ax_dacc.set_ylabel('Accuracy\n(Deployed)', labelpad=7)
-		# ax_dacc.set_ylim((33,67))
-		# ax_dacc.set_xscale("log")
-		ax_dacc.set_xlim(right=max(nvals))
-		ax_dacc.yaxis.set_major_formatter(PercentageFmt)
-		ax_dacc.xaxis.set_major_formatter(ThousandsFmt)
-
-		for mn,c,acc,acc_se in zip(mnames[::-1],colors[::-1],(dacc_v_n.T)[::-1],(dacc_se_v_n.T)[::-1]):
-			ax_dacc_di.plot(nvals, acc, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_dacc_di.fill_between(nvals, acc+acc_se, acc-acc_se, alpha=0.2, color=c, linewidth=0)
-		ax_dacc_di.set_xlabel('Training Samples', labelpad=3.5)
-		ax_dacc_di.set_ylabel('Accuracy\n(Deployed)', labelpad=7)
-		# ax_dacc_di.set_ylim((33,67))
-		# ax_dacc_di.set_xscale("log")
-		ax_dacc_di.set_xlim(right=max(nvals))
-		ax_dacc_di.yaxis.set_major_formatter(PercentageFmt)
-		ax_dacc_di.xaxis.set_major_formatter(ThousandsFmt)
-
-		# Plot failure rate
-		for mn, c,fr,se in zip(mnames[::-1],colors[::-1],(ofrates.T)[::-1], (ofrates_se.T)[::-1]):
-			ax_ofr.plot(nvals, fr*100, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_ofr.fill_between(nvals, (fr+se)*100, (fr-se)*100, color=c, linewidth=0, alpha=0.25)
-		ax_ofr.axhline(delta*100, color='k', linestyle=':')
-		ax_ofr.set_xlabel('Training Samples', labelpad=3.5)
-		ax_ofr.set_ylabel('Failure Rate\n(Original)', labelpad=7)
-		# ax_ofr.set_xscale("log")
-		ax_ofr.set_ylim((-np.nanmax(ofrates)*5, np.nanmax(ofrates)*110))
-		ax_ofr.set_xlim(right=max(nvals))
-		ax_ofr.yaxis.set_major_formatter(PercentageFmt)
-		ax_ofr.xaxis.set_major_formatter(ThousandsFmt)
-
-		for mn, c,fr,se in zip(mnames[::-1],colors[::-1],(dfrates.T)[::-1], (dfrates_se.T)[::-1]):
-			ax_dfr.plot(nvals, fr*100, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_dfr.fill_between(nvals, (fr+se)*100, (fr-se)*100, color=c, linewidth=0, alpha=0.25)
-		ax_dfr.axhline(delta*100, color='k', linestyle=':')
-		ax_dfr.set_xlabel('Training Samples', labelpad=3.5)
-		ax_dfr.set_ylabel('Failure Rate\n(Deployed)', labelpad=7)
-		# ax_dfr.set_xscale("log")
-		ax_dfr.set_ylim((-np.nanmax(dfrates)*5, np.nanmax(dfrates)*110))
-		ax_dfr.set_xlim(right=max(nvals))
-		ax_dfr.yaxis.set_major_formatter(PercentageFmt)
-		ax_dfr.xaxis.set_major_formatter(ThousandsFmt)
-
-		for mn, c,fr,se in zip(mnames[::-1],colors[::-1],(dfrates.T)[::-1], (dfrates_se.T)[::-1]):
-			ax_dfr_di.plot(nvals, fr*100, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_dfr_di.fill_between(nvals, (fr+se)*100, (fr-se)*100, color=c, linewidth=0, alpha=0.25)
-		ax_dfr_di.axhline(delta*100, color='k', linestyle=':')
-		ax_dfr_di.set_xlabel('Training Samples', labelpad=3.5)
-		ax_dfr_di.set_ylabel('Failure Rate\n(Deployed)', labelpad=7)
-		# ax_dfr_di.set_xscale("log")
-		ax_dfr_di.set_ylim((-np.nanmax(dfrates)*5, np.nanmax(dfrates)*110))
-		ax_dfr_di.set_xlim(right=max(nvals))
-		ax_dfr_di.yaxis.set_major_formatter(PercentageFmt)
-		ax_dfr_di.xaxis.set_major_formatter(ThousandsFmt)
-
-		# Finalize the figure and display/save
-		for ax in [ax_ar, ax_oacc, ax_ofr, ax_dacc, ax_dfr]:
-			ax.spines['right'].set_visible(False)
-			ax.spines['top'].set_visible(False)
-		fig.subplots_adjust(top=0.93, left=0.065, right=0.98, bottom=0.21)
-		if save_figs:
-			save(fig,'iclr_adult_demographic_shift_sex_di.%s' % fmt, dpi=dpi)
+		if not(os.path.exists(path)):
+			print('No results found at path \'%s\'. Skipped.' % path)
 		else:
-			fig.show()
+			D = get_adult_stats(path)
+			arates = D['arate_v_n']
+			arates_se = D['arate_se_v_n']
+			ofrates = D['ofrate_v_n']
+			ofrates_se = D['ofrate_se_v_n']
+			dfrates = D['dfrate_v_n']
+			dfrates_se = D['dfrate_se_v_n']
+			oacc_v_n = D['olrate_v_n']
+			oacc_se_v_n = D['olrate_se_v_n']
+			dacc_v_n = D['dlrate_v_n']
+			dacc_se_v_n = D['dlrate_se_v_n']
+			mnames = D['mnames']
+			colors = D['colors']
+			nvals = D['n_train']
+			
+			fig = plt.figure(constrained_layout=False, figsize=(10, 4))
+			gs = fig.add_gridspec(2, 6, hspace=1.0,wspace=2)
 
+			ax_ar   = fig.add_subplot(gs[:, :2])
+			ax_oacc = fig.add_subplot(gs[0, 2:4])
+			ax_ofr  = fig.add_subplot(gs[0, 4:6])
+			ax_dacc = fig.add_subplot(gs[1, 2:4])
+			ax_dfr  = fig.add_subplot(gs[1, 4:6])
+			
+			# Plot acceptance rate
+			for mn,c,ar,se in zip(mnames[::-1],colors[::-1],(arates.T)[::-1], (arates_se.T)[::-1]):
+				ax_ar.plot(nvals, (1-ar), c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
+				ax_ar.fill_between(nvals, ((1-ar)+se), ((1-ar)-se), alpha=0.25, linewidth=0, color=c)
+			ax_ar.set_xlabel('Training Samples', labelpad=3.5)
+			ax_ar.set_ylabel('Pr(NO_SOLUTION_FOUND)', labelpad=7)
+			ax_ar.set_xlim(right=max(nvals))
+			ax_ar.set_ylim((0,1))
+			ax_ar.xaxis.set_major_formatter(ThousandsFmt)
 
+			# Plot Accuracy Original
+			for mn,c,acc,acc_se in zip(mnames[::-1],colors[::-1],(oacc_v_n.T)[::-1],(oacc_se_v_n.T)[::-1]):
+				ax_oacc.plot(nvals, acc, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
+				ax_oacc.fill_between(nvals, acc+acc_se, acc-acc_se, alpha=0.2, color=c, linewidth=0)
+			ax_oacc.set_xlabel('Training Samples', labelpad=3.5)
+			ax_oacc.set_ylabel('Accuracy\n(Original)', labelpad=7)
+			ax_oacc.set_xlim(right=max(nvals))
+			ax_oacc.yaxis.set_major_formatter(PercentageFmt)
+			ax_oacc.xaxis.set_major_formatter(ThousandsFmt)
 
-	####################################################################
-	# DemographicParity: Accuracy, Acceptance Rates, and Failure Rates #
-	####################################################################
+			# Plot Accuracy Deployed
+			for mn,c,acc,acc_se in zip(mnames[::-1],colors[::-1],(dacc_v_n.T)[::-1],(dacc_se_v_n.T)[::-1]):
+				ax_dacc.plot(nvals, acc, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
+				ax_dacc.fill_between(nvals, acc+acc_se, acc-acc_se, alpha=0.2, color=c, linewidth=0)
+			ax_dacc.set_xlabel('Training Samples', labelpad=3.5)
+			ax_dacc.set_ylabel('Accuracy\n(Deployed)', labelpad=7)
+			ax_dacc.set_xlim(right=max(nvals))
+			ax_dacc.yaxis.set_major_formatter(PercentageFmt)
+			ax_dacc.xaxis.set_major_formatter(ThousandsFmt)
 
-	if not(os.path.exists(dp_path)):
-		print('No results found at path \'%s\'. Skipped.' % dp_path)
-	else:
-		D = get_adult_stats(dp_path)
-		arates = D['arate_v_n']
-		arates_se = D['arate_se_v_n']
-		ofrates = D['ofrate_v_n']
-		ofrates_se = D['ofrate_se_v_n']
-		dfrates = D['dfrate_v_n']
-		dfrates_se = D['dfrate_se_v_n']
-		oacc_v_n = D['olrate_v_n']
-		oacc_se_v_n = D['olrate_se_v_n']
-		dacc_v_n = D['dlrate_v_n']
-		dacc_se_v_n = D['dlrate_se_v_n']
-		mnames = D['mnames']
-		colors = D['colors']
-		nvals = D['n_train']
-		
-		fig = plt.figure(constrained_layout=False, figsize=(10, 4))
-		gs = fig.add_gridspec(2, 6, hspace=1.0,wspace=2)
+			# Plot Failure Rate Original
+			for mn, c,fr,se in zip(mnames[::-1],colors[::-1],(ofrates.T)[::-1], (ofrates_se.T)[::-1]):
+				ax_ofr.plot(nvals, fr*100, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
+				ax_ofr.fill_between(nvals, (fr+se)*100, (fr-se)*100, color=c, linewidth=0, alpha=0.25)
+			ax_ofr.axhline(delta*100, color='k', linestyle=':')
+			ax_ofr.set_xlabel('Training Samples', labelpad=3.5)
+			ax_ofr.set_ylabel('Failure Rate\n(Original)', labelpad=7)
+			ax_ofr.set_ylim((-np.nanmax(ofrates)*5, np.nanmax(ofrates)*110))
+			ax_ofr.set_xlim(right=max(nvals))
+			ax_ofr.yaxis.set_major_formatter(PercentageFmt)
+			ax_ofr.xaxis.set_major_formatter(ThousandsFmt)
 
-		ax_ar   = fig.add_subplot(gs[:, :2])
-		ax_oacc = fig.add_subplot(gs[0, 2:4])
-		ax_ofr  = fig.add_subplot(gs[0, 4:6])
-		ax_dacc = fig.add_subplot(gs[1, 2:4])
-		ax_dfr  = fig.add_subplot(gs[1, 4:6])
-		
-		# Plot acceptance rate
-		for mn,c,ar,se in zip(mnames[::-1],colors[::-1],(arates.T)[::-1], (arates_se.T)[::-1]):
-			ax_ar.plot(nvals, (1-ar), c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_ar.fill_between(nvals, ((1-ar)+se), ((1-ar)-se), alpha=0.25, linewidth=0, color=c)
-		ax_ar.set_xlabel('Training Samples', labelpad=3.5)
-		ax_ar.set_ylabel('$\Pr(\\texttt{NO\_SOLUTION\_FOUND})$', labelpad=7)
-		# ax_ar.set_xscale("log")
-		ax_ar.set_xlim(right=max(nvals))
-		ax_ar.set_ylim((0,1))
-		ax_ar.xaxis.set_major_formatter(ThousandsFmt)
-		# ax_ar.yaxis.set_major_formatter(PercentageFmt)
+			# Plot Failure Rate Deployed and create legend
+			legend_data, added = [], []
+			for mn, c,fr,se in zip(mnames[::-1],colors[::-1],(dfrates.T)[::-1], (dfrates_se.T)[::-1]):
+				line = ax_dfr.plot(nvals, fr*100, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
+				ax_dfr.fill_between(nvals, (fr+se)*100, (fr-se)*100, color=c, linewidth=0, alpha=0.25)
+				pmn = pprint_map[mn]
+				if not(pmn in added):
+					added.append(pmn)
+					legend_data.append(line)
+			legend_data, added = legend_data[::-1], added[::-1]
+			ax_dfr.axhline(delta*100, color='k', linestyle=':')
+			ax_dfr.set_xlabel('Training Samples', labelpad=3.5)
+			ax_dfr.set_ylabel('Failure Rate\n(Deployed)', labelpad=7)
+			ax_dfr.set_ylim((-np.nanmax(dfrates)*5, np.nanmax(dfrates)*110))
+			ax_dfr.set_xlim(right=max(nvals))
+			ax_dfr.yaxis.set_major_formatter(PercentageFmt)
+			ax_dfr.xaxis.set_major_formatter(ThousandsFmt)
 
-		# Plot accuracy values
-		for mn,c,acc,acc_se in zip(mnames[::-1],colors[::-1],(oacc_v_n.T)[::-1],(oacc_se_v_n.T)[::-1]):
-			ax_oacc.plot(nvals, acc, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_oacc.fill_between(nvals, acc+acc_se, acc-acc_se, alpha=0.2, color=c, linewidth=0)
-		ax_oacc.set_xlabel('Training Samples', labelpad=3.5)
-		ax_oacc.set_ylabel('Accuracy\n(Original)', labelpad=7)
-		# ax_oacc.set_ylim((33,67))
-		# ax_oacc.set_xscale("log")
-		ax_oacc.set_xlim(right=max(nvals))
-		ax_oacc.yaxis.set_major_formatter(PercentageFmt)
-		ax_oacc.xaxis.set_major_formatter(ThousandsFmt)
+			# Finalize the figure and display/save
+			for ax in [ax_ar, ax_oacc, ax_ofr, ax_dacc, ax_dfr]:
+				ax.spines['right'].set_visible(False)
+				ax.spines['top'].set_visible(False)
+				
+			fig.subplots_adjust(top=0.93, left=0.065, right=0.98, bottom=0.21)
 
-		for mn,c,acc,acc_se in zip(mnames[::-1],colors[::-1],(dacc_v_n.T)[::-1],(dacc_se_v_n.T)[::-1]):
-			ax_dacc.plot(nvals, acc, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_dacc.fill_between(nvals, acc+acc_se, acc-acc_se, alpha=0.2, color=c, linewidth=0)
-		ax_dacc.set_xlabel('Training Samples', labelpad=3.5)
-		ax_dacc.set_ylabel('Accuracy\n(Deployed)', labelpad=7)
-		# ax_dacc.set_ylim((33,67))
-		# ax_dacc.set_xscale("log")
-		ax_dacc.set_xlim(right=max(nvals))
-		ax_dacc.yaxis.set_major_formatter(PercentageFmt)
-		ax_dacc.xaxis.set_major_formatter(ThousandsFmt)
-		
-		for mn,c,acc,acc_se in zip(mnames[::-1],colors[::-1],(dacc_v_n.T)[::-1],(dacc_se_v_n.T)[::-1]):
-			ax_dacc_dp.plot(nvals, acc, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_dacc_dp.fill_between(nvals, acc+acc_se, acc-acc_se, alpha=0.2, color=c, linewidth=0)
-		ax_dacc_dp.set_xlabel('Training Samples', labelpad=3.5)
-		ax_dacc_dp.set_ylabel('Accuracy\n(Deployed)', labelpad=7)
-		# ax_dacc_dp.set_ylim((33,67))
-		# ax_dacc_dp.set_xscale("log")
-		ax_dacc_dp.set_xlim(right=max(nvals))
-		ax_dacc_dp.yaxis.set_major_formatter(PercentageFmt)
-		ax_dacc_dp.xaxis.set_major_formatter(ThousandsFmt)
+			if save_figs:
+				save(fig,f'{path[-28:-2]}{fmt}', dpi=dpi)
+			else:
+				fig.show()
 
-		# Plot failure rate
-		for mn, c,fr,se in zip(mnames[::-1],colors[::-1],(ofrates.T)[::-1], (ofrates_se.T)[::-1]):
-			ax_ofr.plot(nvals, fr*100, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_ofr.fill_between(nvals, (fr+se)*100, (fr-se)*100, color=c, linewidth=0, alpha=0.25)
-		ax_ofr.axhline(delta*100, color='k', linestyle=':')
-		ax_ofr.set_xlabel('Training Samples', labelpad=3.5)
-		ax_ofr.set_ylabel('Failure Rate\n(Original)', labelpad=7)
-		# ax_ofr.set_xscale("log")
-		ax_ofr.set_ylim((-np.nanmax(ofrates)*5, np.nanmax(ofrates)*110))
-		ax_ofr.set_xlim(right=max(nvals))
-		ax_ofr.yaxis.set_major_formatter(PercentageFmt)
-		ax_ofr.xaxis.set_major_formatter(ThousandsFmt)
-		for mn, c,fr,se in zip(mnames[::-1],colors[::-1],(dfrates.T)[::-1], (dfrates_se.T)[::-1]):
-			ax_dfr.plot(nvals, fr*100, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_dfr.fill_between(nvals, (fr+se)*100, (fr-se)*100, color=c, linewidth=0, alpha=0.25)
-		ax_dfr.axhline(delta*100, color='k', linestyle=':')
-		ax_dfr.set_xlabel('Training Samples', labelpad=3.5)
-		ax_dfr.set_ylabel('Failure Rate\n(Deployed)', labelpad=7)
-		# ax_dfr.set_xscale("log")
-		ax_dfr.set_ylim((-np.nanmax(dfrates)*5, np.nanmax(dfrates)*110))
-		ax_dfr.set_xlim(right=max(nvals))
-		ax_dfr.yaxis.set_major_formatter(PercentageFmt)
-		ax_dfr.xaxis.set_major_formatter(ThousandsFmt)
-
-		for mn, c,fr,se in zip(mnames[::-1],colors[::-1],(dfrates.T)[::-1], (dfrates_se.T)[::-1]):
-			ax_dfr_dp.plot(nvals, fr*100, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_dfr_dp.fill_between(nvals, (fr+se)*100, (fr-se)*100, color=c, linewidth=0, alpha=0.25)
-		ax_dfr_dp.axhline(delta*100, color='k', linestyle=':')
-		ax_dfr_dp.set_xlabel('Training Samples', labelpad=3.5)
-		ax_dfr_dp.set_ylabel('Failure Rate\n(Deployed)', labelpad=7)
-		# ax_dfr_dp.set_xscale("log")
-		ax_dfr_dp.set_ylim((-np.nanmax(dfrates)*5, np.nanmax(dfrates)*110))
-		ax_dfr_dp.set_xlim(right=max(nvals))
-		ax_dfr_dp.yaxis.set_major_formatter(PercentageFmt)
-		ax_dfr_dp.xaxis.set_major_formatter(ThousandsFmt)
-
-		# Finalize the figure and display/save
-		for ax in [ax_ar, ax_oacc, ax_ofr, ax_dacc, ax_dfr]:
-			ax.spines['right'].set_visible(False)
-			ax.spines['top'].set_visible(False)
-		fig.subplots_adjust(top=0.93, left=0.065, right=0.98, bottom=0.21)
-		if save_figs:
-			save(fig,'iclr_adult_demographic_shift_sex_dp.%s' % fmt, dpi=dpi)
-		else:
-			fig.show()
-
-
-	ax_dfr_di.set_title('Disparate Impact')
-	ax_dfr_dp.set_title('Demographic Parity')
-	ff_acc.subplots_adjust(top=0.83, left=0.165, right=0.98, bottom=0.21)
-	ff_dfr.subplots_adjust(top=0.83, left=0.165, right=0.98, bottom=0.21)
-	save(ff_acc, 'iclr_adult_talk_acc.%s' % fmt, dpi=dpi)
-	save(ff_dfr, 'iclr_adult_talk_fr.%s' % fmt, dpi=dpi)
-
-
-	# ################################################################
-	# # EqualizedOdds: Accuracy, Acceptance Rates, and Failure Rates #
-	# ################################################################
-
-	if not(os.path.exists(eodds_path)):
-		print('No results found at path \'%s\'. Skipped.' % eodds_path)
-	else:
-		D = get_adult_stats(eodds_path)
-		arates = D['arate_v_n']
-		arates_se = D['arate_se_v_n']
-		ofrates = D['ofrate_v_n']
-		ofrates_se = D['ofrate_se_v_n']
-		dfrates = D['dfrate_v_n']
-		dfrates_se = D['dfrate_se_v_n']
-		oacc_v_n = D['olrate_v_n']
-		oacc_se_v_n = D['olrate_se_v_n']
-		dacc_v_n = D['dlrate_v_n']
-		dacc_se_v_n = D['dlrate_se_v_n']
-		mnames = D['mnames']
-		colors = D['colors']
-		nvals = D['n_train']
-		
-		fig = plt.figure(constrained_layout=False, figsize=(10, 1.9))
-		gs = fig.add_gridspec(2, 6, hspace=1.0,wspace=2)
-
-		ax_ar   = fig.add_subplot(gs[:, :2])
-		ax_oacc = fig.add_subplot(gs[0, 2:4])
-		ax_ofr  = fig.add_subplot(gs[0, 4:6])
-		ax_dacc = fig.add_subplot(gs[1, 2:4])
-		ax_dfr  = fig.add_subplot(gs[1, 4:6])
-		
-		# Plot acceptance rate
-		for mn,c,ar,se in zip(mnames[::-1],colors[::-1],(arates.T)[::-1], (arates_se.T)[::-1]):
-			ax_ar.plot(nvals, (1-ar), c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_ar.fill_between(nvals, ((1-ar)+se), ((1-ar)-se), alpha=0.25, linewidth=0, color=c)
-		ax_ar.set_xlabel('Training Samples', labelpad=3.5)
-		ax_ar.set_ylabel('$\Pr(\\texttt{NO\_SOLUTION\_FOUND})$', labelpad=7)
-		# ax_ar.set_xscale("log")
-		ax_ar.set_xlim(right=max(nvals))
-		ax_ar.set_ylim((0,1))
-		ax_ar.xaxis.set_major_formatter(ThousandsFmt)
-		# ax_ar.yaxis.set_major_formatter(PercentageFmt)
-
-		# Plot accuracy values
-		for mn,c,acc,acc_se in zip(mnames[::-1],colors[::-1],(oacc_v_n.T)[::-1],(oacc_se_v_n.T)[::-1]):
-			ax_oacc.plot(nvals, acc, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_oacc.fill_between(nvals, acc+acc_se, acc-acc_se, alpha=0.2, color=c, linewidth=0)
-		ax_oacc.set_xlabel('Training Samples', labelpad=3.5)
-		ax_oacc.set_ylabel('Accuracy\n(Original)', labelpad=7)
-		# ax_oacc.set_ylim((33,67))
-		# ax_oacc.set_xscale("log")
-		ax_oacc.set_xlim(right=max(nvals))
-		ax_oacc.yaxis.set_major_formatter(PercentageFmt)
-		ax_oacc.xaxis.set_major_formatter(ThousandsFmt)
-
-		for mn,c,acc,acc_se in zip(mnames[::-1],colors[::-1],(dacc_v_n.T)[::-1],(dacc_se_v_n.T)[::-1]):
-			ax_dacc.plot(nvals, acc, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_dacc.fill_between(nvals, acc+acc_se, acc-acc_se, alpha=0.2, color=c, linewidth=0)
-		ax_dacc.set_xlabel('Training Samples', labelpad=3.5)
-		ax_dacc.set_ylabel('Accuracy\n(Deployed)', labelpad=7)
-		# ax_dacc.set_ylim((33,67))
-		# ax_dacc.set_xscale("log")
-		ax_dacc.set_xlim(right=max(nvals))
-		ax_dacc.yaxis.set_major_formatter(PercentageFmt)
-		ax_dacc.xaxis.set_major_formatter(ThousandsFmt)
-
-		# Plot failure rate
-		for mn, c,fr,se in zip(mnames[::-1],colors[::-1],(ofrates.T)[::-1], (ofrates_se.T)[::-1]):
-			ax_ofr.plot(nvals, fr*100, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_ofr.fill_between(nvals, (fr+se)*100, (fr-se)*100, color=c, linewidth=0, alpha=0.25)
-		ax_ofr.axhline(delta*100, color='k', linestyle=':')
-		ax_ofr.set_xlabel('Training Samples', labelpad=3.5)
-		ax_ofr.set_ylabel('Failure Rate\n(Original)', labelpad=7)
-		# ax_ofr.set_xscale("log")
-		ax_ofr.set_ylim((-np.nanmax(ofrates)*5, np.nanmax(ofrates)*110))
-		ax_ofr.set_xlim(right=max(nvals))
-		ax_ofr.yaxis.set_major_formatter(PercentageFmt)
-		ax_ofr.xaxis.set_major_formatter(ThousandsFmt)
-
-		for mn, c,fr,se in zip(mnames[::-1],colors[::-1],(dfrates.T)[::-1], (dfrates_se.T)[::-1]):
-			ax_dfr.plot(nvals, fr*100, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_dfr.fill_between(nvals, (fr+se)*100, (fr-se)*100, color=c, linewidth=0, alpha=0.25)
-		ax_dfr.axhline(delta*100, color='k', linestyle=':')
-		ax_dfr.set_xlabel('Training Samples', labelpad=3.5)
-		ax_dfr.set_ylabel('Failure Rate\n(Deployed)', labelpad=7)
-		# ax_dfr.set_xscale("log")
-		ax_dfr.set_ylim((-np.nanmax(dfrates)*5, np.nanmax(dfrates)*110))
-		ax_dfr.set_xlim(right=max(nvals))
-		ax_dfr.yaxis.set_major_formatter(PercentageFmt)
-		ax_dfr.xaxis.set_major_formatter(ThousandsFmt)
-
-		# Finalize the figure and display/save
-		for ax in [ax_ar, ax_oacc, ax_ofr, ax_dacc, ax_dfr]:
-			ax.spines['right'].set_visible(False)
-			ax.spines['top'].set_visible(False)
-		fig.subplots_adjust(top=0.93, left=0.065, right=0.98, bottom=0.21)
-		if save_figs:
-			save(fig,'iclr_adult_demographic_shift_sex_eodds.%s' % fmt, dpi=dpi)
-		else:
-			fig.show()
-
-
-	# ###################################################################
-	# # PredictiveEquality: Accuracy, Acceptance Rates, and Failure Rates #
-	# ###################################################################
-
-	if not(os.path.exists(pe_path)):
-		print('No results found at path \'%s\'. Skipped.' % pe_path)
-	else:
-		D = get_adult_stats(pe_path)
-		arates = D['arate_v_n']
-		arates_se = D['arate_se_v_n']
-		ofrates = D['ofrate_v_n']
-		ofrates_se = D['ofrate_se_v_n']
-		dfrates = D['dfrate_v_n']
-		dfrates_se = D['dfrate_se_v_n']
-		oacc_v_n = D['olrate_v_n']
-		oacc_se_v_n = D['olrate_se_v_n']
-		dacc_v_n = D['dlrate_v_n']
-		dacc_se_v_n = D['dlrate_se_v_n']
-		mnames = D['mnames']
-		colors = D['colors']
-		nvals = D['n_train']
-		
-		fig = plt.figure(constrained_layout=False, figsize=(10, 1.9))
-		gs = fig.add_gridspec(2, 6, hspace=1.0,wspace=2)
-
-		ax_ar   = fig.add_subplot(gs[:, :2])
-		ax_oacc = fig.add_subplot(gs[0, 2:4])
-		ax_ofr  = fig.add_subplot(gs[0, 4:6])
-		ax_dacc = fig.add_subplot(gs[1, 2:4])
-		ax_dfr  = fig.add_subplot(gs[1, 4:6])
-		
-		# Plot acceptance rate
-		for mn,c,ar,se in zip(mnames[::-1],colors[::-1],(arates.T)[::-1], (arates_se.T)[::-1]):
-			ax_ar.plot(nvals, (1-ar), c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_ar.fill_between(nvals, ((1-ar)+se), ((1-ar)-se), alpha=0.25, linewidth=0, color=c)
-		ax_ar.set_xlabel('Training Samples', labelpad=3.5)
-		ax_ar.set_ylabel('$\Pr(\\texttt{NO\_SOLUTION\_FOUND})$', labelpad=7)
-		# ax_ar.set_xscale("log")
-		ax_ar.set_xlim(right=max(nvals))
-		ax_ar.set_ylim((0,1))
-		ax_ar.xaxis.set_major_formatter(ThousandsFmt)
-		# ax_ar.yaxis.set_major_formatter(PercentageFmt)
-
-		# Plot accuracy values
-		for mn,c,acc,acc_se in zip(mnames[::-1],colors[::-1],(oacc_v_n.T)[::-1],(oacc_se_v_n.T)[::-1]):
-			ax_oacc.plot(nvals, acc, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_oacc.fill_between(nvals, acc+acc_se, acc-acc_se, alpha=0.2, color=c, linewidth=0)
-		ax_oacc.set_xlabel('Training Samples', labelpad=3.5)
-		ax_oacc.set_ylabel('Accuracy\n(Original)', labelpad=7)
-		# ax_oacc.set_ylim((33,67))
-		# ax_oacc.set_xscale("log")
-		ax_oacc.set_xlim(right=max(nvals))
-		ax_oacc.yaxis.set_major_formatter(PercentageFmt)
-		ax_oacc.xaxis.set_major_formatter(ThousandsFmt)
-
-		for mn,c,acc,acc_se in zip(mnames[::-1],colors[::-1],(dacc_v_n.T)[::-1],(dacc_se_v_n.T)[::-1]):
-			ax_dacc.plot(nvals, acc, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_dacc.fill_between(nvals, acc+acc_se, acc-acc_se, alpha=0.2, color=c, linewidth=0)
-		ax_dacc.set_xlabel('Training Samples', labelpad=3.5)
-		ax_dacc.set_ylabel('Accuracy\n(Deployed)', labelpad=7)
-		# ax_dacc.set_ylim((33,67))
-		# ax_dacc.set_xscale("log")
-		ax_dacc.set_xlim(right=max(nvals))
-		ax_dacc.yaxis.set_major_formatter(PercentageFmt)
-		ax_dacc.xaxis.set_major_formatter(ThousandsFmt)
-
-		# Plot failure rate
-		for mn, c,fr,se in zip(mnames[::-1],colors[::-1],(ofrates.T)[::-1], (ofrates_se.T)[::-1]):
-			ax_ofr.plot(nvals, fr*100, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_ofr.fill_between(nvals, (fr+se)*100, (fr-se)*100, color=c, linewidth=0, alpha=0.25)
-		ax_ofr.axhline(delta*100, color='k', linestyle=':')
-		ax_ofr.set_xlabel('Training Samples', labelpad=3.5)
-		ax_ofr.set_ylabel('Failure Rate\n(Original)', labelpad=7)
-		# ax_ofr.set_xscale("log")
-		ax_ofr.set_ylim((-np.nanmax(ofrates)*5, np.nanmax(ofrates)*110))
-		ax_ofr.set_xlim(right=max(nvals))
-		ax_ofr.yaxis.set_major_formatter(PercentageFmt)
-		ax_ofr.xaxis.set_major_formatter(ThousandsFmt)
-
-		for mn, c,fr,se in zip(mnames[::-1],colors[::-1],(dfrates.T)[::-1], (dfrates_se.T)[::-1]):
-			ax_dfr.plot(nvals, fr*100, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_dfr.fill_between(nvals, (fr+se)*100, (fr-se)*100, color=c, linewidth=0, alpha=0.25)
-		ax_dfr.axhline(delta*100, color='k', linestyle=':')
-		ax_dfr.set_xlabel('Training Samples', labelpad=3.5)
-		ax_dfr.set_ylabel('Failure Rate\n(Deployed)', labelpad=7)
-		# ax_dfr.set_xscale("log")
-		ax_dfr.set_ylim((-np.nanmax(dfrates)*5, np.nanmax(dfrates)*110))
-		ax_dfr.set_xlim(right=max(nvals))
-		ax_dfr.yaxis.set_major_formatter(PercentageFmt)
-		ax_dfr.xaxis.set_major_formatter(ThousandsFmt)
-
-		# Finalize the figure and display/save
-		for ax in [ax_ar, ax_oacc, ax_ofr, ax_dacc, ax_dfr]:
-			ax.spines['right'].set_visible(False)
-			ax.spines['top'].set_visible(False)
-		fig.subplots_adjust(top=0.93, left=0.065, right=0.98, bottom=0.21)
-		if save_figs:
-			save(fig,'iclr_adult_demographic_shift_sex_pe.%s' % fmt, dpi=dpi)
-		else:
-			fig.show()
-
-
-	# #####################################################################
-	# # EqualOpportunity: Accuracy, Acceptance Rates, and Failure Rates #
-	# #####################################################################
-
-
-	if not(os.path.exists(eo_path)):
-		print('No results found at path \'%s\'. Skipped.' % eo_path)
-	else:
-		D = get_adult_stats(eo_path)
-		arates = D['arate_v_n']
-		arates_se = D['arate_se_v_n']
-		ofrates = D['ofrate_v_n']
-		ofrates_se = D['ofrate_se_v_n']
-		dfrates = D['dfrate_v_n']
-		dfrates_se = D['dfrate_se_v_n']
-		oacc_v_n = D['olrate_v_n']
-		oacc_se_v_n = D['olrate_se_v_n']
-		dacc_v_n = D['dlrate_v_n']
-		dacc_se_v_n = D['dlrate_se_v_n']
-		mnames = D['mnames']
-		colors = D['colors']
-		nvals = D['n_train']
-		
-		fig = plt.figure(constrained_layout=False, figsize=(10, 1.9))
-		gs = fig.add_gridspec(2, 6, hspace=1.0,wspace=2)
-
-		ax_ar   = fig.add_subplot(gs[:, :2])
-		ax_oacc = fig.add_subplot(gs[0, 2:4])
-		ax_ofr  = fig.add_subplot(gs[0, 4:6])
-		ax_dacc = fig.add_subplot(gs[1, 2:4])
-		ax_dfr  = fig.add_subplot(gs[1, 4:6])
-		
-		# Plot acceptance rate
-		for mn,c,ar,se in zip(mnames[::-1],colors[::-1],(arates.T)[::-1], (arates_se.T)[::-1]):
-			ax_ar.plot(nvals, (1-ar), c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_ar.fill_between(nvals, ((1-ar)+se), ((1-ar)-se), alpha=0.25, linewidth=0, color=c)
-		ax_ar.set_xlabel('Training Samples', labelpad=3.5)
-		ax_ar.set_ylabel('$\Pr(\\texttt{NO\_SOLUTION\_FOUND})$', labelpad=7)
-		# ax_ar.set_xscale("log")
-		ax_ar.set_xlim(right=max(nvals))
-		ax_ar.set_ylim((0,1))
-		ax_ar.xaxis.set_major_formatter(ThousandsFmt)
-		# ax_ar.yaxis.set_major_formatter(PercentageFmt)
-
-		# Plot accuracy values
-		legend_data, added = [], []
-		for mn,c,acc,acc_se in zip(mnames[::-1],colors[::-1],(oacc_v_n.T)[::-1],(oacc_se_v_n.T)[::-1]):
-			line = ax_oacc.plot(nvals, acc, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_oacc.fill_between(nvals, acc+acc_se, acc-acc_se, alpha=0.2, color=c, linewidth=0)
-			pmn = pprint_map[mn]
-			if not(pmn in added):
-				added.append(pmn)
-				legend_data.append(line)
-		legend_data, added = legend_data[::-1], added[::-1]
-		ax_oacc.set_xlabel('Training Samples', labelpad=3.5)
-		ax_oacc.set_ylabel('Accuracy\n(Original)', labelpad=7)
-		# ax_oacc.set_ylim((33,67))
-		# ax_oacc.set_xscale("log")
-		ax_oacc.set_xlim(right=max(nvals))
-		ax_oacc.yaxis.set_major_formatter(PercentageFmt)
-		ax_oacc.xaxis.set_major_formatter(ThousandsFmt)
-
-		for mn,c,acc,acc_se in zip(mnames[::-1],colors[::-1],(dacc_v_n.T)[::-1],(dacc_se_v_n.T)[::-1]):
-			ax_dacc.plot(nvals, acc, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_dacc.fill_between(nvals, acc+acc_se, acc-acc_se, alpha=0.2, color=c, linewidth=0)
-		ax_dacc.set_xlabel('Training Samples', labelpad=3.5)
-		ax_dacc.set_ylabel('Accuracy\n(Deployed)', labelpad=7)
-		# ax_dacc.set_ylim((33,67))
-		# ax_dacc.set_xscale("log")
-		ax_dacc.set_xlim(right=max(nvals))
-		ax_dacc.yaxis.set_major_formatter(PercentageFmt)
-		ax_dacc.xaxis.set_major_formatter(ThousandsFmt)
-
-		# Plot failure rate
-		for mn, c,fr,se in zip(mnames[::-1],colors[::-1],(ofrates.T)[::-1], (ofrates_se.T)[::-1]):
-			ax_ofr.plot(nvals, fr*100, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_ofr.fill_between(nvals, (fr+se)*100, (fr-se)*100, color=c, linewidth=0, alpha=0.25)
-		ax_ofr.axhline(delta*100, color='k', linestyle=':')
-		ax_ofr.set_xlabel('Training Samples', labelpad=3.5)
-		ax_ofr.set_ylabel('Failure Rate\n(Original)', labelpad=7)
-		# ax_ofr.set_xscale("log")
-		ax_ofr.set_ylim((-np.nanmax(ofrates)*5, np.nanmax(ofrates)*110))
-		ax_ofr.set_xlim(right=max(nvals))
-		ax_ofr.yaxis.set_major_formatter(PercentageFmt)
-		ax_ofr.xaxis.set_major_formatter(ThousandsFmt)
-
-		for mn, c,fr,se in zip(mnames[::-1],colors[::-1],(dfrates.T)[::-1], (dfrates_se.T)[::-1]):
-			ax_dfr.plot(nvals, fr*100, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
-			ax_dfr.fill_between(nvals, (fr+se)*100, (fr-se)*100, color=c, linewidth=0, alpha=0.25)
-		ax_dfr.axhline(delta*100, color='k', linestyle=':')
-		ax_dfr.set_xlabel('Training Samples', labelpad=3.5)
-		ax_dfr.set_ylabel('Failure Rate\n(Deployed)', labelpad=7)
-		# ax_dfr.set_xscale("log")
-		ax_dfr.set_ylim((-np.nanmax(dfrates)*5, np.nanmax(dfrates)*110))
-		ax_dfr.set_xlim(right=max(nvals))
-		ax_dfr.yaxis.set_major_formatter(PercentageFmt)
-		ax_dfr.xaxis.set_major_formatter(ThousandsFmt)
-
-		# Finalize the figure and display/save
-		for ax in [ax_ar, ax_oacc, ax_ofr, ax_dacc, ax_dfr]:
-			ax.spines['right'].set_visible(False)
-			ax.spines['top'].set_visible(False)
-		fig.subplots_adjust(top=0.93, left=0.065, right=0.98, bottom=0.21)
-		if save_figs:
-			save(fig,'iclr_adult_demographic_shift_sex_eo.%s' % fmt, dpi=dpi)
-		else:
-			fig.show()
-
-		#####################################
-		# Figure containing the legend only #
-		#####################################
-
+		# Legend figure
 		fig = plt.figure(figsize=(10.75,0.3))
 		priorities = [legend_priority[n] for n in added]
 		added = [ added[i] for i in np.argsort(priorities)[::-1]]
 		legend_data = [ legend_data[i] for i in np.argsort(priorities)[::-1]]
 		fig.legend(legend_data, added, 'center', fancybox=True, ncol=len(legend_data), columnspacing=1, fontsize=11, handletextpad=0.5)
 		save(fig, 'iclr_legend.%s' % fmt, dpi=dpi)
-		# fig.show()
+
+for path in all_paths:
+	plotting(all_paths[path])
