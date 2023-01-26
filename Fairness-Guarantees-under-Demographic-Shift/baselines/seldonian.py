@@ -29,6 +29,7 @@ class SeldonianClassifierBase:
         known_demographic_terms=None,
         seed=None,
         robust_loss=False,
+        hidden_layers=[],
     ):
         self.shape_error = shape_error
         self.verbose = verbose
@@ -40,6 +41,7 @@ class SeldonianClassifierBase:
         self._term_values = term_values
         self._cs_scale = cs_scale
         self._seed = seed
+        self.hidden_layers = hidden_layers
 
         # Set up the constraint manager to handle the input constraints
         self._cm = ConstraintManager(
@@ -149,6 +151,17 @@ class SeldonianClassifierBase:
             return np.sign(X.dot(theta))
         ######
 
+        elif self.model_type == "mlp":
+            # n_hidden = model_params['hidden_layers']
+
+            layer_sizes = [self.dataset.n_features] + self.hidden_layers + [1] # one, because binary classification
+            for n_in, n_out in zip(layer_sizes[:-2], layer_sizes[1:-1]):
+                theta_part = theta[:n_in * n_out].reshape((n_in, n_out))
+                print('Laagje', theta_part.shape)
+                X = np.tanh(X @ theta_part)
+
+            return np.sign(X.dot(theta[-layer_sizes[-2]:])) # no tahn over last layer
+
         raise ValueError(
             "SeldonianClassifierBase.predict(): unknown model type: '%s'"
             % self.model_type
@@ -158,6 +171,8 @@ class SeldonianClassifierBase:
     def n_features(self):
         if self.model_type == "linear":
             return self.dataset.n_features
+        if self.model_type == "mlp":
+            return self.dataset.n_features * (self.dataset.n_features + 1)
 
     # Constraint evaluation
 
@@ -347,6 +362,7 @@ class SeldonianClassifier(SeldonianClassifierBase):
         shape_error=False,		# in model_params
         verbose=False,			# in model_params
         model_type="linear",  # in model_params - always linear
+        hidden_layers=[], 
         model_params={},		# kwarg? in experiment file - if robustness=enforced extra params are added
         # experiments use both 'ttest' (for Quasi-) and 'Hoeffding' (for Regular)
         ci_mode="hoeffding",
@@ -367,6 +383,7 @@ class SeldonianClassifier(SeldonianClassifierBase):
             shape_error=shape_error,
             verbose=verbose,
             model_type=model_type,
+            hidden_layers=hidden_layers,
             model_params=model_params,
             ci_mode=ci_mode,
             robustness_bounds=robustness_bounds,

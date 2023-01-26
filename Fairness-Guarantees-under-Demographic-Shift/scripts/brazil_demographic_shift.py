@@ -140,26 +140,36 @@ def _get_hoeff_sc(dataset, mp, enforce_robustness=False):
         'model_type': mp['model_type'],
         'ci_mode': 'hoeffding',
         'cs_scale': mp['cs_scale'],
-        'robust_loss': False}
+        'robust_loss': False,
+        'hidden_layers': mp['hidden_layers']}
     if enforce_robustness:
         for k in ['demographic_variable', 'demographic_variable_values', 'demographic_marginals', 'known_demographic_terms', 'robust_loss']:
             model_params[k] = mp[k]
 
     # Train SC using hoeffding's inequality
-    apply_fairness_constraints = 1
-    apply_accuracy_constraint = 0
-    sep_constraint = 0
-    gamma = None
-    e = -mp['e']*100
+    if mp["model_type"] == "linear":
+        apply_fairness_constraints = 1
+        apply_accuracy_constraint = 0
+        sep_constraint = 0
+        gamma = None
+        e = -mp['e']*100
 
-    split = dataset.training_splits()
-    X, Y, S, R = split['X'], split['Y'], split['S'], split['R']
-    x_control = {'S': S.astype(np.int64), 'R': R.astype(np.int64)}
-    sensitive_attrs = ['S', 'R']
-    sensitive_attrs_to_cov_thresh = {'S': 0.1,
-                                     'R': {v: 0.01 for v in dataset._unique_values['R']}}
-    w = f_c.train_model(X, Y, x_control, f_c._logistic_loss, apply_fairness_constraints,
-                        apply_accuracy_constraint, sep_constraint, sensitive_attrs, sensitive_attrs_to_cov_thresh, gamma)
+        split = dataset.training_splits()
+        X, Y, S, R = split['X'], split['Y'], split['S'], split['R']
+        x_control = {'S': S.astype(np.int64), 'R': R.astype(np.int64)}
+        sensitive_attrs = ['S', 'R']
+        sensitive_attrs_to_cov_thresh = {'S': 0.1,
+                                        'R': {v: 0.01 for v in dataset._unique_values['R']}}
+        w = f_c.train_model(X, Y, x_control, f_c._logistic_loss, apply_fairness_constraints,
+                            apply_accuracy_constraint, sep_constraint, sensitive_attrs, sensitive_attrs_to_cov_thresh, gamma)
+
+    if mp["model_type"] == "mlp":
+        layer_sizes = [dataset.n_features] + mp["hidden_layers"] + [1] # one, because binary classification
+        n_params = 0
+        for n_in, n_out in zip(layer_sizes[:-1], layer_sizes[1:]):
+            n_params += (n_in * n_out)
+        w = np.random.randn(n_params)
+
 
     model = SeldonianClassifier(
         mp['constraints'], mp['deltas'], **model_params)
@@ -175,26 +185,35 @@ def _get_ttest_sc(dataset, mp, enforce_robustness=False):
         'model_type': mp['model_type'],
         'ci_mode': 'ttest',
         'cs_scale': mp['cs_scale'],
-        'robust_loss': False}
+        'robust_loss': False,
+        'hidden_layers': mp['hidden_layers']}
     if enforce_robustness:
         for k in ['demographic_variable', 'demographic_variable_values', 'demographic_marginals', 'known_demographic_terms', 'robust_loss']:
             model_params[k] = mp[k]
 
     # Train SC using hoeffding's inequality
-    apply_fairness_constraints = 1
-    apply_accuracy_constraint = 0
-    sep_constraint = 0
-    gamma = None
-    e = -mp['e']*100
+    if mp["model_type"] == "linear":  
+        apply_fairness_constraints = 1
+        apply_accuracy_constraint = 0
+        sep_constraint = 0
+        gamma = None
+        e = -mp['e']*100
 
-    split = dataset.training_splits()
-    X, Y, S, R = split['X'], split['Y'], split['S'], split['R']
-    x_control = {'S': S.astype(np.int64), 'R': R.astype(np.int64)}
-    sensitive_attrs = ['S', 'R']
-    sensitive_attrs_to_cov_thresh = {'S': 0.1,
-                                     'R': {v: 0.01 for v in dataset._unique_values['R']}}
-    w = f_c.train_model(X, Y, x_control, f_c._logistic_loss, apply_fairness_constraints,
-                        apply_accuracy_constraint, sep_constraint, sensitive_attrs, sensitive_attrs_to_cov_thresh, gamma)
+        split = dataset.training_splits()
+        X, Y, S, R = split['X'], split['Y'], split['S'], split['R']
+        x_control = {'S': S.astype(np.int64), 'R': R.astype(np.int64)}
+        sensitive_attrs = ['S', 'R']
+        sensitive_attrs_to_cov_thresh = {'S': 0.1,
+                                        'R': {v: 0.01 for v in dataset._unique_values['R']}}
+        w = f_c.train_model(X, Y, x_control, f_c._logistic_loss, apply_fairness_constraints,
+                            apply_accuracy_constraint, sep_constraint, sensitive_attrs, sensitive_attrs_to_cov_thresh, gamma)
+
+    elif mp['model_type'] == "mlp":
+        layer_sizes = [dataset.n_features] + mp["hidden_layers"] + [1] # one, because binary classification
+        n_params = 0
+        for n_in, n_out in zip(layer_sizes[:-1], layer_sizes[1:]):
+            n_params += (n_in * n_out)            
+        w = np.random.randn(n_params)
 
     model = SeldonianClassifier(
         mp['constraints'], mp['deltas'], **model_params)
@@ -326,6 +345,7 @@ if __name__ == '__main__':
                             help='Width of intervals around true marginals representing valid demographic shifts.')
         parser.add_argument('--cs_scale', type=float, default=1.0,
                             help='Scaling factor for predicted confidence intervals during candidate selection.')
+        parser.add_argument('--hidden_layers', type=int, nargs='*',help='Number of nodes for each hidden layer')
         args = parser.parse_args()
         args_dict = dict(args.__dict__)
 
@@ -391,7 +411,7 @@ if __name__ == '__main__':
 
         # Fill in parameter dictionaries for each model
         srl_mparam_names = ['n_iters', 'optimizer', 'model_type',
-                            'definition', 'e', 'cs_scale', 'robust_loss']
+                            'definition', 'e', 'cs_scale', 'robust_loss', 'hidden_layers']
         bsln_mparam_names = ['definition', 'e']
         mparams = {}
         for name in model_evaluators.keys():
