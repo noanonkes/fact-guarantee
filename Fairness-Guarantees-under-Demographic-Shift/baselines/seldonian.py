@@ -5,8 +5,6 @@ from functools import partial
 from helpers.cmaes_optimizer import OPTIMIZERS
 from helpers.constraint_manager import ConstraintManager
 
-from helpers.mlp import MLP, MLPOptimizer
-
 from sys import float_info
 
 MAX_VALUE = float_info.max
@@ -131,8 +129,6 @@ class SeldonianClassifierBase:
             return OPTIMIZERS[name](
                 self.n_features, sigma0=0.01, n_restarts=50, seed=self._seed
             )
-        elif name == "crossentropy":
-            return MLPOptimizer() # NOT COMPLETE
         ######
 
         raise ValueError(
@@ -149,23 +145,19 @@ class SeldonianClassifierBase:
         theta = self.theta if (theta is None) else theta
 
         ######
-        # This model_type seems to be the only one that is actually used in the experiments
+        # This model_type seems to be the only one that is actually used in the original experiments
         # Linear -> returns -1 when <0, 0 if ==0, and 1 when >0
         if self.model_type == "linear":
             return np.sign(X.dot(theta))
         ######
 
         elif self.model_type == "mlp":
-            # n_hidden = model_params['hidden_layers']
+            layer_sizes = [self.dataset.n_features] + self.hidden_layers + [1] # one, because binary classification
+            for n_in, n_out in zip(layer_sizes[:-2], layer_sizes[1:-1]):
+                theta_part = theta[:n_in * n_out].reshape((n_in, n_out))
+                X = np.tanh(X @ theta_part)
 
-            # layer_sizes = [self.dataset.n_features] + self.hidden_layers + [1] # one, because binary classification
-            # for n_in, n_out in zip(layer_sizes[:-2], layer_sizes[1:-1]):
-            #     theta_part = theta[:n_in * n_out].reshape((n_in, n_out))
-            #     X = np.tanh(X @ theta_part)
-
-            # return np.sign(X.dot(theta[-layer_sizes[-2]:])) # no tahn over last layer
-            self.model = MLP(self.dataset.n_features, self.hidden_layers, 1) # one, because binary
-            return self.model.forward(X)[0] 
+            return np.sign(X.dot(theta[-layer_sizes[-2]:])) # no tahn over last layer
         
         raise ValueError(
             "SeldonianClassifierBase.predict(): unknown model type: '%s'"
