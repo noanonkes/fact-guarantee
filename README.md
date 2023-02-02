@@ -54,16 +54,22 @@ Once completed, the figures will be saved to `Fairness-Guarantees-under-Demograp
 
 You can download results of our experiments [here](https://drive.google.com/drive/folders/1u41wPeqjdMjkaXf5T0nJtW0i446fycLV?usp=sharing) 
 
+
 ## Overall results
 
 Our experiments support the following claims made in the original paper:
 
-- Claim 1:
-     stuff
-- Claim 2:
-     stuff
-- Claim 3:
-     stuff
+- [X] Claim 1: *High Confidence Fairness Guarantee*
+
+    Reproduction of the original experiments as well as the conducted additional experiments, show that this claims holds. Namely, `Shifty` **never** returns and unfair model. This is shown by utilizing an unseen dataset and a different classifier. 
+    
+- [X] Claim 2: *Minor Loss of Accuracy*
+
+    The original and additional experiments show strong support for this claim, as results indeed show only a **3%** loss in accuracy when comparing `Shifty` to the other baseline fairness algorithms. 
+    
+- [ ] Claim 3: *Finding a Solution*
+
+    In this study not enough evidence was found to support this claim, namely that `Shifty` avoids returning *NO_SOLUTION_FOUND* when increasing the number of samples in the training data. 
 
 ...
 
