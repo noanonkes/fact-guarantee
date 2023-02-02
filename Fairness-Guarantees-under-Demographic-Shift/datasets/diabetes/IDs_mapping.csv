@@ -66,3 +66,84 @@ admission_source_id,description
 24, Born outside this hospital
 25, Transfer from Ambulatory Surgery Center
 26,Transfer from Hospice
+,
+medical_specialty_id, description
+1,Speech
+2,InternalMedicine
+3,Family/GeneralPractice
+4,Cardiology
+5,Surgery-General
+6,Orthopedics
+7,Gastroenterology
+8,Surgery-Cardiovascular/Thoracic
+9,Nephrology
+10,Orthopedics-Reconstructive
+11,Psychiatry
+12,Emergency/Trauma
+13,Pulmonology
+14,Surgery-Neuro
+15,Obsterics&Gynecology-GynecologicOnco
+16,ObstetricsandGynecology
+17,Pediatrics
+18,Otolaryngology
+19,Pediatrics-Endocrinology
+20,Endocrinology
+21,Hematology/Oncology
+22,Urology
+23,Pediatrics-CriticalCare
+24,Psychiatry-Child/Adolescent
+25,Pediatrics-Pulmonology
+26,Surgery-Colon&Rectal
+27,Neurology
+28,Anesthesiology-Pediatric
+29,Radiology
+30,Pediatrics-Hematology-Oncology
+31,Podiatry
+32,Gynecology
+33,Oncology
+34,Pediatrics-Neurology
+35,Surgery-Plastic
+36,Surgery-Thoracic
+37,Surgery-PlasticwithinHeadandNeck
+38,Psychology
+39,Ophthalmology
+40,Surgery-Pediatric
+41,PhysicalMedicineandRehabilitation
+42,InfectiousDiseases
+43,Anesthesiology
+44,Pediatrics-EmergencyMedicine
+45,Rheumatology
+46,AllergyandImmunology
+47,Surgery-Maxillofacial
+48,Pediatrics-InfectiousDiseases
+49,Pediatrics-AllergyandImmunology
+50,Dentistry
+51,Surgeon
+52,Surgery-Vascular
+53,Osteopath
+54,Psychiatry-Addictive
+55,Surgery-Cardiovascular
+56,PhysicianNotFound
+57,Hematology
+58,Proctology
+59,Obstetrics
+60,SurgicalSpecialty
+61,Radiologist
+62,Pathology
+63,Dermatology
+64,SportsMedicine
+65,Hospitalist
+66,OutreachServices
+67,Cardiology-Pediatric
+68,Perinatology
+69,Neurophysiology
+70,Endocrinology-Metabolism
+71,DCPTEAM
+72,Resident
+,
+race_id, description
+1, Hispanic
+2, Caucasian
+3, AfricanAmerican
+4, Asian
+5, Other

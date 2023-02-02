@@ -171,7 +171,7 @@ def eval_ttest_sc_robust(dataset, mp):
 #   Dataset Loader   #
 ######################
 
-def load_dataset_r(tparams, seed):
+def load_dataset_s(tparams, seed):
     dset_args = {
         'r_train': 1.0,
         'include_intercept': True,
@@ -182,6 +182,22 @@ def load_dataset_r(tparams, seed):
         'standardize': tparams['standardize'],
         'R0': 'Black',
         'R1': 'White'
+    }
+    dataset = diabetes.load_s(**dset_args)
+    dataset.resample_n_train = tparams['n_train']
+    dataset._tparams = deepcopy(tparams)
+    dataset._seed = seed
+    return dataset
+
+def load_dataset_r(tparams, seed):
+    dset_args = {
+        'r_train': 1.0,
+        'include_intercept': True,
+        'include_R': tparams['include_R'],
+        'include_S': tparams['include_S'],
+        'use_pct': 1.0,
+        'seed': seed,
+        'standardize': tparams['standardize'],
     }
     dataset = diabetes.load_r(**dset_args)
     dataset.resample_n_train = tparams['n_train']
@@ -244,12 +260,14 @@ if __name__ == '__main__':
         args = parser.parse_args()
         args_dict = dict(args.__dict__)
 
-        population = diabetes.load_r(R0='Black', R1='White')
+        
         # Generate the constraints and deltas
         if args.dshift_var.lower()[0] == 's':
+            population = diabetes.load_s(R0='Black', R1='White')
             constraints = make_constraints(
                 args.definition, 'R', np.unique(population._R), args.e)
         if args.dshift_var.lower()[0] == 'r':
+            population = diabetes.load_r()
             constraints = make_constraints(
                 args.definition, 'S', np.unique(population._S), args.e)
         deltas = [args.d for _ in constraints]
@@ -310,10 +328,6 @@ if __name__ == '__main__':
             mparams[name]['r_cand_v_safe'] = args.r_cand_v_safe
             mparams[name].update(smla_dshift_opts)
 
-        # Commented out since the additional experiments only apply to Seldonian
-        # mparams['FairConst'].update(cov=[0.01])
-        # mparams['FairlearnSVC'].update(
-        #     loss=['hinge'], penalty='l2', fit_intercept=False, fl_e=[0.01, 0.1])
 
         #  Expand the parameter sets into a set of configurations
         args_to_expand = parser._sweep_argnames + \
@@ -321,8 +335,6 @@ if __name__ == '__main__':
         tparams, mparams = launcher.make_parameters(
             tparams, mparams, expand=args_to_expand)
 
-        # Fix so FairlearnSVC doesn't run twice
-        # mparams['FairlearnSVC'] = [mparams['FairlearnSVC'][0]]
 
         print(ds.make_intervals(Pr_D, args.dshift_alpha, epsilon=1e-3))
         print(ds.make_intervals(Pr_D, args.dshift_alpha, epsilon=1e-3))
@@ -333,5 +345,9 @@ if __name__ == '__main__':
             args.base_path, tparams, mparams, smla_names, root='results', filename=None)
         print()
         # Run the experiment
-        launcher.run(args.n_trials, save_path, model_evaluators,
-                     load_dataset_r, tparams, mparams, n_workers=args.n_jobs, seed=None)
+        if args.dshift_var.lower() == 'sex':
+            launcher.run(args.n_trials, save_path, model_evaluators,
+                        load_dataset_s, tparams, mparams, n_workers=args.n_jobs, seed=None)
+        elif args.dshift_var.lower() == 'race':
+            launcher.run(args.n_trials, save_path, model_evaluators,
+                        load_dataset_r, tparams, mparams, n_workers=args.n_jobs, seed=None)

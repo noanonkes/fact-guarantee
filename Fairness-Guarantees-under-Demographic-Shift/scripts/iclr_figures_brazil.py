@@ -1,6 +1,5 @@
 import numpy as np
 import os
-import matplotlib
 from matplotlib import pyplot as plt
 import matplotlib.ticker as mtick
 from matplotlib.colors import hex2color
@@ -29,8 +28,8 @@ if __name__ == '__main__':
 	dpi = 200
 
 	# Paths to results files. Figures will be skipped if data cannot be found.
-	di_path     = f'results/iclr_brazil_{mode}_ds_rl_di_0/iclr_brazil_{mode}_ds_rl_di.h5'
-	dp_path     = f'results/iclr_brazil_{mode}_ds_rl_dp_0/iclr_brazil_{mode}_ds_rl_dp.h5'
+	di_path     = f'results/results_original_experiments/iclr_brazil_{mode}_ds_rl_di_0/iclr_brazil_{mode}_ds_rl_di.h5'
+	dp_path     = f'results/results_original_experiments/iclr_brazil_{mode}_ds_rl_dp_0/iclr_brazil_{mode}_ds_rl_dp.h5'
 
 	all_paths = {
 		'di':di_path,
@@ -56,18 +55,24 @@ if __name__ == '__main__':
 		'SC'              : 'Seldonian',
 		'QSC'             : 'Quasi-Seldonian',
 		'QSRC'            : 'Shifty',
+		'FairlearnSVC'    : 'Fairlearn',
+		'FairConst'       : 'Fairness Constraints',
+		'FairRobust'      : 'RFLearn'
 	}
 
 	legend_priority = {
 	'Seldonian':0,
 	'Quasi-Seldonian':-0.5,
 	'Shifty':0.5,
+	'Fairness Constraints':-0.7,
+	'Fairlearn':-0.71,
+	'RFLearn':0.1,
 	}
 
 	standard_smla_names = ['SC', 'QSC']
 	robust_smla_names   = ['QSRC']
 
-	keep_mname_list = ['SC','QSC','QSRC']
+	keep_mname_list = ['SC','QSC','QSRC','FairConst','FairlearnSVC','FairRobust']
 
 	# Create the figure directory if nonexistent
 	if save_figs and not(os.path.isdir(figpath)):
@@ -110,7 +115,6 @@ if __name__ == '__main__':
 		mnames = np.unique(results.name).astype(str)
 		mnames = [mn for mn in mnames if mn in keep_mname_list]
 		pmnames = np.array([ pprint_map[name] for name in mnames ])
-		print('-'*100)
 		for tid, _ in enumerate(n_train):
 			_arates, _arates_se = [], []
 			_ofrates, _ofrates_se = [], []
@@ -130,9 +134,6 @@ if __name__ == '__main__':
 				dg = np.array([ (g>0 if a else False) for (g,a) in zip(antagonist_gs,accepts) ])
 				oa = np.array(_results.original_acc)
 				da = np.array(_results.antagonist_acc)
-				if mname == 'FairRobust':
-					print(mname)
-					print(dg)
 				
 				n = len(accepts)
 				n_accepts = sum(accepts)
@@ -235,47 +236,106 @@ if __name__ == '__main__':
 			D = get_brazil_stats(path)
 			arates = D['arate_v_n']
 			arates_se = D['arate_se_v_n']
+			ofrates = D['ofrate_v_n']
+			ofrates_se = D['ofrate_se_v_n']
+			dfrates = D['dfrate_v_n']
+			dfrates_se = D['dfrate_se_v_n']
+			oacc_v_n = D['olrate_v_n']
+			oacc_se_v_n = D['olrate_se_v_n']
+			dacc_v_n = D['dlrate_v_n']
+			dacc_se_v_n = D['dlrate_se_v_n']
 			mnames = D['mnames']
 			colors = D['colors']
 			nvals = D['n_train']
 			
-			fig, ax_ar = plt.subplots() 
+			fig = plt.figure(constrained_layout=False, figsize=(10, 4))
+			gs = fig.add_gridspec(2, 6, hspace=1.0,wspace=2)
 
+			ax_ar   = fig.add_subplot(gs[:, :2])
+			ax_oacc = fig.add_subplot(gs[0, 2:4])
+			ax_ofr  = fig.add_subplot(gs[0, 4:6])
+			ax_dacc = fig.add_subplot(gs[1, 2:4])
+			ax_dfr  = fig.add_subplot(gs[1, 4:6])
+			
 			# Plot acceptance rate
-			legend_data, added = [], []
-
 			for mn,c,ar,se in zip(mnames[::-1],colors[::-1],(arates.T)[::-1], (arates_se.T)[::-1]):
-				line = ax_ar.plot(nvals, (1-ar), c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
+				ax_ar.plot(nvals, (1-ar), c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
 				ax_ar.fill_between(nvals, ((1-ar)+se), ((1-ar)-se), alpha=0.25, linewidth=0, color=c)
-				
-				pmn = pprint_map[mn]
-				if not(pmn in added):
-					added.append(pmn)
-					legend_data.append(line)
-			legend_data, added = legend_data[::-1], added[::-1]
-
 			ax_ar.set_xlabel('Training Samples', labelpad=3.5)
 			ax_ar.set_ylabel('Pr(NO_SOLUTION_FOUND)', labelpad=7)
 			ax_ar.set_xlim(right=max(nvals))
 			ax_ar.set_ylim((0,1))
 			ax_ar.xaxis.set_major_formatter(ThousandsFmt)
 
+			# Plot Accuracy Original
+			for mn,c,acc,acc_se in zip(mnames[::-1],colors[::-1],(oacc_v_n.T)[::-1],(oacc_se_v_n.T)[::-1]):
+				ax_oacc.plot(nvals, acc, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
+				ax_oacc.fill_between(nvals, acc+acc_se, acc-acc_se, alpha=0.2, color=c, linewidth=0)
+			ax_oacc.set_xlabel('Training Samples', labelpad=3.5)
+			ax_oacc.set_ylabel('Accuracy\n(Original)', labelpad=7)
+			ax_oacc.set_xlim(right=max(nvals))
+			ax_oacc.yaxis.set_major_formatter(PercentageFmt)
+			ax_oacc.xaxis.set_major_formatter(ThousandsFmt)
+
+			# Plot Accuracy Deployed
+			for mn,c,acc,acc_se in zip(mnames[::-1],colors[::-1],(dacc_v_n.T)[::-1],(dacc_se_v_n.T)[::-1]):
+				ax_dacc.plot(nvals, acc, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
+				ax_dacc.fill_between(nvals, acc+acc_se, acc-acc_se, alpha=0.2, color=c, linewidth=0)
+			ax_dacc.set_xlabel('Training Samples', labelpad=3.5)
+			ax_dacc.set_ylabel('Accuracy\n(Deployed)', labelpad=7)
+			ax_dacc.set_xlim(right=max(nvals))
+			ax_dacc.yaxis.set_major_formatter(PercentageFmt)
+			ax_dacc.xaxis.set_major_formatter(ThousandsFmt)
+
+			# Plot Failure Rate Original
+			for mn, c,fr,se in zip(mnames[::-1],colors[::-1],(ofrates.T)[::-1], (ofrates_se.T)[::-1]):
+				ax_ofr.plot(nvals, fr*100, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
+				ax_ofr.fill_between(nvals, (fr+se)*100, (fr-se)*100, color=c, linewidth=0, alpha=0.25)
+			ax_ofr.axhline(delta*100, color='k', linestyle=':')
+			ax_ofr.set_xlabel('Training Samples', labelpad=3.5)
+			ax_ofr.set_ylabel('Failure Rate\n(Original)', labelpad=7)
+			ax_ofr.set_ylim((-np.nanmax(ofrates)*5, np.nanmax(ofrates)*110))
+			ax_ofr.set_xlim(right=max(nvals))
+			ax_ofr.yaxis.set_major_formatter(PercentageFmt)
+			ax_ofr.xaxis.set_major_formatter(ThousandsFmt)
+
+			# Plot Failure Rate Deployed and create legend
+			legend_data, added = [], []
+			for mn, c,fr,se in zip(mnames[::-1],colors[::-1],(dfrates.T)[::-1], (dfrates_se.T)[::-1]):
+				line = ax_dfr.plot(nvals, fr*100, c=c, ls=get_ls(mn), lw=get_lw(mn))[0]
+				ax_dfr.fill_between(nvals, (fr+se)*100, (fr-se)*100, color=c, linewidth=0, alpha=0.25)
+				pmn = pprint_map[mn]
+				if not(pmn in added):
+					added.append(pmn)
+					legend_data.append(line)
+			legend_data, added = legend_data[::-1], added[::-1]
+			ax_dfr.axhline(delta*100, color='k', linestyle=':')
+			ax_dfr.set_xlabel('Training Samples', labelpad=3.5)
+			ax_dfr.set_ylabel('Failure Rate\n(Deployed)', labelpad=7)
+			ax_dfr.set_ylim((-np.nanmax(dfrates)*5, np.nanmax(dfrates)*110))
+			ax_dfr.set_xlim(right=max(nvals))
+			ax_dfr.yaxis.set_major_formatter(PercentageFmt)
+			ax_dfr.xaxis.set_major_formatter(ThousandsFmt)
+
 			# Finalize the figure and display/save
-			ax_ar.spines['right'].set_visible(False)
-			ax_ar.spines['top'].set_visible(False)
+			for ax in [ax_ar, ax_oacc, ax_ofr, ax_dacc, ax_dfr]:
+				ax.spines['right'].set_visible(False)
+				ax.spines['top'].set_visible(False)
 				
+			fig.subplots_adjust(top=0.93, left=0.065, right=0.98, bottom=0.21)
+
 			if save_figs:
-				save(fig,f'{path[-28:-2]}{fmt}', dpi=dpi)
+				save(fig,f'{path[-29:-2]}{fmt}', dpi=dpi)
 			else:
 				fig.show()
 
-		# Legend figure
-		fig = plt.figure(figsize=(10.75,0.3))
-		priorities = [legend_priority[n] for n in added]
-		added = [ added[i] for i in np.argsort(priorities)[::-1]]
-		legend_data = [ legend_data[i] for i in np.argsort(priorities)[::-1]]
-		fig.legend(legend_data, added, 'center', fancybox=True, ncol=len(legend_data), columnspacing=1, fontsize=11, handletextpad=0.5)
-		save(fig, 'iclr_legend.%s' % fmt, dpi=dpi)
+			# Legend figure
+			fig = plt.figure(figsize=(10.75,0.3))
+			priorities = [legend_priority[n] for n in added]
+			added = [ added[i] for i in np.argsort(priorities)[::-1]]
+			legend_data = [ legend_data[i] for i in np.argsort(priorities)[::-1]]
+			fig.legend(legend_data, added, loc='center', fancybox=True, ncol=len(legend_data), columnspacing=1, fontsize=11, handletextpad=0.5)
+			save(fig, 'iclr_legend.%s' % fmt, dpi=dpi)
 
 for path in all_paths:
 	plotting(all_paths[path])
