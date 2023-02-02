@@ -24,16 +24,3 @@ python -m scripts.diabetes_demographic_shift iclr_diabetes_antag_ds_rl_sex_dp  -
 
 python -m scripts.diabetes_demographic_shift iclr_diabetes_antag_ds_rl_race_di  --n_jobs 8 --n_trials 10 --n_train 10000 20000 30000 40000 50000 60000 --definition DisparateImpact    --e -0.8 --n_iters 20000 --standardize --r_train_v_test 0.4 --r_cand_v_safe 0.4 --d 0.05 --optimizer cmaes --dshift_var race --dshift_alpha 0.25 --cs_scale 1.5 --robust_loss
 python -m scripts.diabetes_demographic_shift iclr_diabetes_antag_ds_rl_race_dp  --n_jobs 8 --n_trials 10 --n_train 10000 20000 30000 40000 50000 60000 --definition DemographicParity  --e  0.1 --n_iters 20000 --standardize --r_train_v_test 0.4 --r_cand_v_safe 0.4 --d 0.05 --optimizer cmaes --dshift_var race --dshift_alpha 0.25 --cs_scale 1.5 --robust_loss
-
-
-:: Generation of figures 
-python -m scripts.iclr_figures_brazil
-python -m scripts.iclr_figures_brazil   --unknown_ds
-python -m scripts.iclr_figures_adult
-python -m scripts.iclr_figures_adult    --unknown_ds
-
-python -m scripts.iclr_figures_adult    --mlp
-python -m scripts.iclr_figures_adult    --unknown_ds --mlp
-
-python -m scripts.iclr_figures_diabetes --unknown_ds --dshift_var sex
-python -m scripts.iclr_figures_diabetes --unknown_ds --dshift_var race

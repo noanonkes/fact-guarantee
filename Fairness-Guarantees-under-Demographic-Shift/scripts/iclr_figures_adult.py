@@ -409,4 +409,5 @@ def plotting_FR(path):
 
 for path in all_paths:
     plotting_NSF_acc(all_paths[path])
-    plotting_FR(all_paths[path])
+    if not args.mlp:
+        plotting_FR(all_paths[path])
